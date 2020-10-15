@@ -1,12 +1,12 @@
-"""Common utilities for PyTorch."""
-import collections
+"""Base config class and utilities."""
+from collections import Mapping
 import inspect
 import json
 
 import numpy as np
 
 
-class Config(collections.Mapping):
+class Config(Mapping):
     """Base config class."""
 
     def __init__(self, **kwargs):
@@ -16,7 +16,7 @@ class Config(collections.Mapping):
             else:
                 setattr(self, key, val)
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str):
         return self.to_dict()[key]
 
     def __iter__(self):
@@ -56,43 +56,25 @@ class Config(collections.Mapping):
         return cfg
 
     def copy(self):
-        """Return a copy of this config.
-
-        Useful, e.g., during grid search.
-
-        Returns:
-          Config.
-        """
         return Config(**self.to_dict())
 
     @classmethod
-    def load(cls, file_path):
-        """Load a saved config.
-
-        Args:
-          file_path: String, path to the saved config. Must be json data.
-
-        Returns:
-          Config.
-        """
+    def load(cls, file_path: str):
         with open(file_path) as f:
             params = json.loads(f.read())
         return cls(**params)
 
-    def save(self, file_path):
-        """Save config as JSON.
-
-        Args:
-          file_path: String. Will be saved as JSON data, so a .json extension
-            makes sense.
-        """
-        with open(file_path, 'w+') as f:
-            f.write(json.dumps(self.to_dict()))
+    def merge(self):
+        raise NotImplementedError
 
     def properties(self):
         def is_property(v):
             return isinstance(v, property)
         return inspect.getmembers(self, is_property)
+
+    def save(self, file_path: str):
+        with open(file_path, 'w+') as f:
+            f.write(json.dumps(self.to_dict()))
 
     def to_dict(self):
         cfg = {}
@@ -107,34 +89,3 @@ class Config(collections.Mapping):
             else:
                 cfg[attr] = val
         return cfg
-
-
-class ExperimentConfig(Config):
-    """Config for an experiment."""
-
-    def __init__(self, experiment_name, ckpt_dir, results_dir, model, train,
-                 anneal, optim, stop, n_runs=20, **kwargs):
-        """Create a new Config class.
-
-        Args:
-          experiment_name: String.
-          ckpt_dir: String, where to save checkpoints and experiment data.
-          results_dir: String, where to save experiment results.
-          n_runs: Integer, number of training runs. Defaults to 20.
-          model: Config object for model specific settings.
-          train: Config object for general training settings.
-          anneal: Config object for annealing config settings.
-          optim: Config object for optimizer config settings.
-          stop: Config object for early stopping settings.
-          kwargs: for any other desired config settings.
-        """
-        super().__init__(**kwargs)
-        self.experiment_name = experiment_name
-        self.ckpt_dir = ckpt_dir
-        self.results_dir = results_dir
-        self.n_runs = n_runs
-        self.model = model
-        self.train = train
-        self.anneal = anneal
-        self.optim = optim
-        self.stop = stop

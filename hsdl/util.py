@@ -4,6 +4,11 @@ import random
 
 import numpy as np
 import torch
+try:
+    get_ipython()
+    from tqdm.notebook import tqdm
+except:
+    from tqdm import tqdm
 
 
 class IxDict:
@@ -83,3 +88,7 @@ def set_random_seed(seed):
         torch.cuda.manual_seed_all(seed)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
+
+
+def get_tqdm():
+    return tqdm
