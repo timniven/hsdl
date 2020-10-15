@@ -21,5 +21,3 @@ class NoDevImprovementConfig(StoppingConfig):
         self.patience = patience
         self.k = k
         self.metric = metric
-
-

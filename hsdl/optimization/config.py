@@ -4,19 +4,23 @@ from hsdl.config import Config
 class OptimizationConfig(Config):
     """Base class for optimization config."""
 
-    def __init__(self, optimizer, lr, weight_decay):
+    def __init__(self, name: str, lr: float, weight_decay: float):
         super().__init__()
-        self.optimizer = optimizer
+        self.name = name
         self.lr = lr
         self.weight_decay = weight_decay
 
 
 class AdamConfig(OptimizationConfig):
-    """Config for Adam optimization."""
 
-    def __init__(self, lr, weight_decay=0., beta1=0.9, beta2=0.999, eps=1e-08):
+    def __init__(self,
+                 lr: float,
+                 weight_decay: float = 0.,
+                 beta1: float = 0.9,
+                 beta2: float = 0.999,
+                 eps: float = 1e-08):
         super().__init__(
-            optimizer='adam',
+            name='adam',
             lr=lr,
             weight_decay=weight_decay)
         self.beta1 = beta1
@@ -25,12 +29,16 @@ class AdamConfig(OptimizationConfig):
 
 
 class AdamWConfig(OptimizationConfig):
-    """Config for AdamW."""
 
-    def __init__(self, lr, weight_decay=0., beta1=0.9, beta2=0.999,
-                 eps=1e-08, correct_bias=True):
+    def __init__(self,
+                 lr: float,
+                 weight_decay: float = 0.,
+                 beta1: float = 0.9,
+                 beta2: float = 0.999,
+                 eps: float = 1e-08,
+                 correct_bias: bool = True):
         super().__init__(
-            optimizer='adamw',
+            name='adamw',
             lr=lr,
             weight_decay=weight_decay)
         self.beta1 = beta1

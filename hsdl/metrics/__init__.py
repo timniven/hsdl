@@ -3,20 +3,22 @@ from typing import Callable
 from sklearn import metrics as sklearn_metrics
 import numpy as np
 
+from .config import MetricConfig
 
-def get(name):
-    if name == 'acc':
-        return Accuracy()
+
+def get(config: MetricConfig):
+    if config.name == 'acc':
+        return Accuracy(config)
     else:
-        raise ValueError(f'Unexpected metric: {name}')
+        raise ValueError(f'Unexpected metric: {config.name}')
 
 
 class Metric:
     """Abstract base class, defining the Metric interface."""
 
-    def __init__(self, name: str, criterion: Callable):
-        self.name = name
-        self.criterion = criterion
+    def __init__(self, config: MetricConfig):
+        self.name = config.name
+        self.criterion = np.max if config.criterion == 'max' else np.min
 
     def __call__(self, y_true, y_pred):
         raise NotImplementedError
@@ -37,9 +39,6 @@ class Metric:
 
 class Accuracy(Metric):
     """Accuracy metric."""
-
-    def __init__(self):
-        super().__init__('accuracy', np.max)
 
     def __call__(self, y_true, y_pred):
         return sklearn_metrics.accuracy_score(y_true, y_pred)

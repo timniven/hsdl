@@ -1,6 +1,6 @@
 from hsdl.annealing import AnnealingConfig
 from hsdl.config import Config
-from hsdl.metrics import Metric
+from hsdl.metrics import MetricConfig
 from hsdl.optimization import OptimizationConfig
 from hsdl.stopping import StoppingConfig
 from hsdl.training import TrainingConfig
@@ -12,7 +12,7 @@ class ExperimentConfig(Config):
     def __init__(self,
                  experiment_name: str,
                  model: Config,
-                 metric: Metric,
+                 metric: MetricConfig,
                  training: TrainingConfig,
                  annealing: AnnealingConfig,
                  optimization: OptimizationConfig,

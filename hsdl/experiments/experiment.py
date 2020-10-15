@@ -1,11 +1,8 @@
-import json
 import os
-from typing import Callable, List, Optional, Tuple
+from typing import Callable, Optional, Tuple
 
-import pandas as pd
-from torch.utils.data import DataLoader
-
-from hsdl.config import Config
+from .data import ExperimentData
+from .results import ExperimentResults
 from hsdl import training, util
 from hsdl.experiments.config import ExperimentConfig
 from hsdl.parameter_search import ParameterSearch, SearchSpace
@@ -13,18 +10,6 @@ from hsdl.training import TrainableModel
 
 
 tqdm = util.get_tqdm()
-
-
-class ExperimentData:
-
-    def train(self) -> DataLoader:
-        raise NotImplementedError
-
-    def dev(self) -> DataLoader:
-        raise NotImplementedError
-
-    def test(self) -> DataLoader:
-        raise NotImplementedError
 
 
 class Experiment:
@@ -43,7 +28,7 @@ class Experiment:
         self.search_space = search_space
         self.ckpt_root_dir = ckpt_root_dir
         self.results_root_dir = results_root_dir
-        self.results = Results(self)
+        self.results = ExperimentResults(self)
 
     @property
     def ckpt_dir(self):
@@ -111,75 +96,3 @@ class Experiment:
         dev_metric, _ = model.evaluate(self.data.dev())
 
         return train_metric, dev_metric
-
-
-class Results:
-    """Basic wrapper for experiment results."""
-
-    def __init__(self, experiment: Experiment):
-        self.experiment_name = experiment.config.experiment_name
-        self.results_dir = experiment.results_dir
-        self.metric_name = experiment.config.metric.name
-        self.metrics, self.preds = self.new_or_load()
-
-    def __len__(self):
-        return len(set(x['run_no'] for x in self.metrics))
-
-    def df_metrics(self):
-        return pd.DataFrame(self.metrics)
-
-    def df_preds(self):
-        return pd.DataFrame(self.preds)
-
-    @property
-    def file_path(self):
-        return os.path.join(self.results_dir, 'results.json')
-
-    def load_data(self):
-        with open(self.file_path, 'r') as f:
-            data = json.loads(f.read())
-        return data
-
-    def new_or_load(self):
-        if os.path.exists(self.file_path):
-            data = self.load_data()
-            return data['metrics'], data['preds']
-        else:
-            return [], []
-
-    def report_metric(self, run_no: int, seed: int, subset: str, metric: float):
-        self.metrics.append({
-            'run_no': run_no,
-            'seed': seed,
-            'subset': subset,
-            self.metric_name: metric,
-        })
-
-    def report_preds(self, run_no: int, seed: int, subset: str,
-                     preds: List[float]):
-        for pred in preds:
-            self.preds.append({
-                'run_no': run_no,
-                'seed': seed,
-                'subset': subset,
-                **pred
-            })
-
-    def save(self):
-        results = {
-            'metrics': self.metrics,
-            'preds': self.preds,
-        }
-        with open(self.file_path, 'w+') as f:
-            f.write(json.dumps(results))
-
-    def summarize(self):
-        df = self.df_metrics()
-        summary = f'{self.experiment_name} results:'
-        for subset in df.subset.unique():
-            m = df[df.subset == subset]
-            summary += f'\t{subset} {self.metric_name}:'
-            summary += '\t\tMax: %5.4f' % m[self.metric_name].max()
-            summary += '\t\tMean: %5.4f' % m[self.metric_name].mean()
-            summary += '\t\tStd: %5.4f' % m[self.metric_name].std()
-        return summary

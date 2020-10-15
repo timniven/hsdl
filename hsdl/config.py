@@ -2,6 +2,7 @@
 from collections import Mapping
 import inspect
 import json
+from typing import Dict
 
 import numpy as np
 
@@ -64,8 +65,9 @@ class Config(Mapping):
             params = json.loads(f.read())
         return cls(**params)
 
-    def merge(self):
-        raise NotImplementedError
+    def merge(self, params: Dict):
+        for param, value in params.items():
+            setattr(self, param, value)
 
     def properties(self):
         def is_property(v):

@@ -1,4 +1,5 @@
 import itertools
+import json
 import os
 import random
 from typing import Dict, List
@@ -43,12 +44,14 @@ class RandomDimension(SearchDimension):
 
 
 class SearchSubSpace:
+    """A subspace is a collection of search dimensions."""
 
     def __init__(self, dimensions: List[SearchDimension]):
         self.dimensions = dimensions
 
 
 class SearchSpace:
+    """A search space is the cross product of one or more sub spaces."""
 
     def __init__(self, sub_spaces: List[SearchSubSpace]):
         self.space = self.build_space(sub_spaces)
@@ -91,9 +94,13 @@ class SearchResults:
         return item in self.results
 
     def best(self):
-        best_score = self.experiment.config.metric.best(self.results.dev.values)
-        best_params = self.results[self.results.dev == best_score]
-        best_params = best_params[self.space.attrs]
+        grouping = ['ix']
+        grouping += self.space.attrs
+        results = self.results.copy().reset_index()
+        means = results.groupby(grouping).mean()
+        best_score = self.experiment.config.metric.best(means.dev.values)
+        best_params = means[means.dev == best_score]
+        best_params = best_params[grouping]
         return best_params.to_dict('records')
 
     @property
@@ -132,10 +139,12 @@ class SearchResults:
 
 class ParameterSearch:
 
-    def __init__(self, experiment: Experiment, search_space: SearchSpace):
+    def __init__(self, experiment: Experiment, search_space: SearchSpace,
+                 k_tie_break: int = 5):
         self.experiment = experiment
         self.search_space = search_space
         self.search_results = SearchResults(experiment, search_space)
+        self.k_tie_break = k_tie_break
 
     def __call__(self):
         # search over the space
@@ -150,31 +159,30 @@ class ParameterSearch:
         best_metric, best_params = self.search_results.best()
 
         # tie break if needed
-        if len(best_params) > 1:
+        while len(best_params) > 1:
             tqdm.write('Found %s combinations with best performance of %s.'
                        % (len(best_params), best_metric))
             tqdm.write('Performing tie break...')
-            for _ in range(3):
-                seed = random.choice(range(10000))
-                for combination in combinations:
-                    self.evaluate(combination, seed, tie_break=True)
-            best_acc, combinations = self.winning_combinations()
+            with tqdm(total=self.k_tie_break) as pbar:
+                for _ in range(self.k_tie_break):
+                    seed = random.choice(range(10000))
+                    for params in best_params:
+                        self.evaluate(params['ix'], seed)
+                        pbar.update()
+            best_metric, best_params = self.search_results.best()
 
-        best_params = combinations[0]
-        tqdm.write('Grid search complete. Best acc: %s. Params:' % best_acc)
-        util.aligned_print(
-            keys=list(best_params.keys()),
-            values=list(best_params.values()),
-            indent=1)
+        best_params = best_params[0]
+        tqdm.write('Grid search complete. Best: %s' % best_metric)
+        util.aligned_print(best_params, indent=1)
 
-        tqdm.write('Saving grid best params...')
-        with open(self.params_path, 'w') as f:
-            best_config = self.config.copy()
-            for key, value in best_params.items():
-                setattr(best_config, key, value)
-            f.write(json.dumps(best_config.__dict__))
+        with open(self.best_params_path, 'w') as f:
+            f.write(json.dumps(best_params))
 
-        return best_acc, best_params
+        return best_params
+
+    @property
+    def best_params_path(self):
+        return os.path.join(self.experiment.results_dir, 'best_params.json')
 
     def evaluate(self, ix: int, seed=42):
         config = self.experiment.config.copy()
@@ -182,231 +190,9 @@ class ParameterSearch:
         config = config.merge(params)
         tqdm.write('Grid search for param combination %s/%s...'
                    % (ix, len(self.search_space)))
-        # TODO: pretty print?
-        tqdm.write(params)
+        util.aligned_print(params, indent=1)
 
         train_metric, dev_metric = self.experiment. \
             train_and_validate(config, seed)
 
         self.search_results.report(ix, params, train_metric, dev_metric)
-
-
-
-
-
-
-
-
-
-
-
-class GridSearch:
-
-    def __init__(self, model, cfg, train_loader, dev_loader, search_space):
-        self.experiment_name = experiment_name
-        self.model_constructor = model_constructor
-        self.data_loaders = data_loaders
-        self.config = config
-        self.search_space = search_space
-        self.search_keys = search_space.keys()
-        self.grid_path = grid_path(experiment_name)
-        self.params_path = params_path(experiment_name)
-        self.data, self.columns = self.get_or_load_data()
-
-    def __call__(self):
-        tqdm.write('Conducting grid search for %s...' % self.experiment_name)
-
-        for combination in self.combinations:
-            if not self.evaluated(combination):
-                self.evaluate(combination)
-            else:
-                print('Already evaluated this combination:')
-                for key, value in combination.items():
-                    print('\t%s:\t%s' % (key, value))
-
-        best_acc, combinations = self.winning_combinations()
-        if best_acc == 0.5:  # i.e. random performance on dev
-            tqdm.write('All dev accs are random - taking best train acc.')
-            # take the run with the best training acc
-            best_acc, combinations = self.winning_train_acc_combinations()
-            while len(combinations) > 1:
-                tqdm.write('Found %s combinations with best train acc of %s.'
-                           % (len(combinations), best_acc))
-                tqdm.write('Performing tie break...')
-                for _ in range(5):
-                    seed = random.choice(range(10000))
-                    for combination in combinations:
-                        self.evaluate(combination, seed, tie_break=True)
-                best_acc, combinations = self.winning_combinations()
-        else:
-            while len(combinations) > 1:
-                tqdm.write('Found %s combinations with best acc of %s.'
-                           % (len(combinations), best_acc))
-                tqdm.write('Performing tie break...')
-                for _ in range(5):
-                    seed = random.choice(range(10000))
-                    for combination in combinations:
-                        self.evaluate(combination, seed, tie_break=True)
-                best_acc, combinations = self.winning_combinations()
-
-        best_params = combinations[0]
-        tqdm.write('Grid search complete. Best acc: %s. Params:' % best_acc)
-        util.aligned_print(
-            keys=list(best_params.keys()),
-            values=list(best_params.values()),
-            indent=1)
-
-        tqdm.write('Saving grid best params...')
-        with open(self.params_path, 'w') as f:
-            best_config = self.config.copy()
-            for key, value in best_params.items():
-                setattr(best_config, key, value)
-            f.write(json.dumps(best_config.__dict__))
-
-        return best_acc, best_params
-
-    @property
-    def combinations(self):
-        keys = self.search_space.keys()
-        values = list(self.search_space.values())
-        i = 0
-        for _values in itertools.product(*values):
-            combination = dict(zip(keys, _values))
-            combination['id'] = i
-            i += 1
-            yield combination
-
-    def evaluate(self, combination, seed=42, tie_break=False):
-        tqdm.write('Evaluating param combination%s:'
-                   % ' (tie break)' if tie_break else '')
-        args = copy.deepcopy(self.config)
-        for key, value in combination.items():
-            setattr(args, key, value)
-            self.data[key].append(value)
-        args.seed = seed
-        args.print()
-        model = self.model_constructor(args)
-        accs, _, __ = training.train(args, model, self.data_loaders)
-        self.data['seed'].append(args.seed)
-        self.data['train_acc'].append(accs['train'])
-        self.data['dev_acc'].append(accs['dev'])
-        self.data['test_acc'].append(accs['test'])
-        df = pd.DataFrame(data=self.data, columns=self.columns)
-        df.to_csv(grid_path(self.experiment_name), index=False)
-
-    def evaluated(self, combination):
-        if not os.path.exists(self.grid_path):
-            return False
-        df = pd.read_csv(self.grid_path)
-        for key, value in combination.items():
-            if isinstance(value, float):
-                df = df[np.isclose(df[key], value)]
-            else:
-                df = df[df[key] == value]
-        return len(df) > 0
-
-    def get_or_load_data(self):
-        # init the dict and columns
-        data = {'id': []}
-        columns = ['id']
-        for key in self.search_keys:
-            data[key] = []
-            columns.append(key)
-        data['seed'] = []
-        data['train_acc'] = []
-        data['dev_acc'] = []
-        data['test_acc'] = []
-        columns += ['seed', 'train_acc', 'dev_acc', 'test_acc']
-
-        # load any old data
-        if os.path.exists(self.grid_path):
-            df = pd.read_csv(self.grid_path)
-            data['id'] = list(df.id.values)
-            for key in self.search_keys:
-                data[key] = list(df[key].values)
-            data['train_acc'] = list(df.train_acc.values)
-            data['dev_acc'] = list(df.dev_acc.values)
-            data['test_acc'] = list(df.test_acc.values)
-            data['seed'] = list(df.seed.values)
-
-        return data, columns
-
-    @staticmethod
-    def get_query(combination):
-        query = ''
-        for key, value in combination.items():
-            if isinstance(value, str):
-                value = "'%s'" % value
-            else:
-                value = str(value)
-            query += ' & %s == %s' % (key, value)
-        query = query[3:]
-        return query
-
-    @staticmethod
-    def parse_dict(_dict):
-        # wish I didn't need this hack for pandas
-        # github issues reckons it should be solved in 24.0?
-        keys = _dict.keys()
-        values = []
-        for value in _dict.values():
-            if isinstance(value, np.bool_):
-                value = bool(value)
-            if isinstance(value, np.float64):
-                value = float(value)
-            if isinstance(value, np.int64):
-                value = int(value)
-            values.append(value)
-        return dict(zip(keys, values))
-
-    def winning_combinations(self):
-        df = pd.read_csv(self.grid_path)
-        best_acc = df.dev_acc.max()
-        rows = df[df.dev_acc == best_acc]
-        wanted_columns = list(self.search_keys) + ['id']
-        column_selector = [c in wanted_columns for c in df.columns]
-        if len(rows) > 1:  # have a tie break
-            ids = rows.id.unique()
-            ids_avgs = []
-            for _id in ids:
-                id_rows = df[df.id == _id]
-                avg = id_rows.dev_acc.mean()
-                ids_avgs.append((_id, avg))
-            best_avg_acc = max(x[1] for x in ids_avgs)
-            best_ids = [x[0] for x in ids_avgs if x[1] == best_avg_acc]
-            combinations = []
-            for _id in best_ids:
-                rows = df[df.id == _id].loc[:, column_selector]
-                combinations.append(rows.iloc[0].to_dict())
-            best_acc = max(best_acc, best_avg_acc)
-        else:
-            rows = rows.loc[:, column_selector]
-            combinations = [r[1].to_dict() for r in rows.iterrows()]
-        combinations = [self.parse_dict(d) for d in combinations]
-        return best_acc, combinations
-
-    def winning_train_acc_combinations(self):
-        df = pd.read_csv(self.grid_path)
-        best_acc = df.train_acc.max()
-        rows = df[df.train_acc == best_acc]
-        wanted_columns = list(self.search_keys) + ['id']
-        column_selector = [c in wanted_columns for c in df.columns]
-        if len(rows) > 1:  # have a tie break
-            ids = rows.id.unique()
-            ids_avgs = []
-            for _id in ids:
-                id_rows = df[df.id == _id]
-                avg = id_rows.train_acc.mean()
-                ids_avgs.append((_id, avg))
-            best_avg_acc = max(x[1] for x in ids_avgs)
-            best_ids = [x[0] for x in ids_avgs if x[1] == best_avg_acc]
-            combinations = []
-            for _id in best_ids:
-                rows = df[df.id == _id].loc[:, column_selector]
-                combinations.append(rows.iloc[0].to_dict())
-            best_acc = max(best_acc, best_avg_acc)
-        else:
-            rows = rows.loc[:, column_selector]
-            combinations = [r[1].to_dict() for r in rows.iterrows()]
-        combinations = [self.parse_dict(d) for d in combinations]
-        return best_acc, combinations

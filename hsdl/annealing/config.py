@@ -3,7 +3,7 @@ from hsdl.config import Config
 
 class AnnealingConfig(Config):
 
-    def __init__(self, schedule, epoch, iter):
+    def __init__(self, schedule: str, epoch: bool, iter: bool):
         """Create a new AnnealingConfig.
 
         Args:
@@ -17,10 +17,10 @@ class AnnealingConfig(Config):
         self.iter = iter
 
 
-class NoAnnealing(AnnealingConfig):
+class NoAnnealingConfig(AnnealingConfig):
 
     def __init__(self):
-        super().__init__(schedule=None, epoch=False, iter=False)
+        super().__init__(schedule='none', epoch=False, iter=False)
 
 
 class ReduceLROnPlateauConfig(AnnealingConfig):

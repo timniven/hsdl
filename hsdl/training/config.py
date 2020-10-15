@@ -26,8 +26,8 @@ class TrainingConfig(Config):
         n_steps = max(int(self.__train_batch_size / self.memory_limit), 1)
         if n_steps == 0:
             raise ValueError(
-                'Erroring here: gradient_accumulation_steps should be '
-                'greater than zero.\n'
+                f'Erroring here: gradient_accumulation_steps should be '
+                f'greater than zero.\n'
                 f'\ttrain_batch_size: {self.__train_batch_size}\t'
                 f'\tmemory_limit" {self.memory_limit}')
         return n_steps
