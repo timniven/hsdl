@@ -17,14 +17,6 @@ except:
 pad = '<PAD>'
 
 
-# progress bars
-epoch_pbar = None
-iter_pbar = None
-eval_train_pbar = None
-eval_dev_pbar = None
-eval_test_pbar = None
-
-
 class IxDict:
 
     def __init__(self, entities):

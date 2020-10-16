@@ -17,7 +17,9 @@ class ExperimentConfig(Config):
                  annealing: AnnealingConfig,
                  optimization: OptimizationConfig,
                  stopping: StoppingConfig,
-                 n_runs=20,
+                 results_dir: str,
+                 ckpt_dir: str,
+                 n_runs: int = 20,
                  **kwargs):
         super().__init__(**kwargs)
         self.experiment_name = experiment_name
@@ -28,3 +30,5 @@ class ExperimentConfig(Config):
         self.optimization = optimization
         self.stopping = stopping
         self.n_runs = n_runs
+        self.results_dir = results_dir
+        self.ckpt_dir = ckpt_dir
