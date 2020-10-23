@@ -1,12 +1,13 @@
-import os
 from typing import Callable, Optional, Tuple
 
-from .data import ExperimentData
-from .results import ExperimentResults
-from hsdl import training, util
+from pytorch_lightning import LightningDataModule, LightningModule, \
+    seed_everything
+
+from hsdl import util
 from hsdl.experiments.config import ExperimentConfig
+from hsdl.experiments.results import ExperimentResults
 from hsdl.parameter_search import ParameterSearch, SearchSpace
-from hsdl.training import TrainableModel
+from hsdl.training import get_trainer
 
 
 tqdm = util.get_tqdm()
@@ -17,26 +18,14 @@ class Experiment:
 
     def __init__(self,
                  model_constructor: Callable,
-                 data: ExperimentData,
+                 data: LightningDataModule,
                  config: ExperimentConfig,
-                 ckpt_root_dir: str,
-                 results_root_dir: str,
                  search_space: Optional[SearchSpace] = None):
         self.model_constructor = model_constructor
         self.data = data
         self.config = config
         self.search_space = search_space
-        self.ckpt_root_dir = ckpt_root_dir
-        self.results_root_dir = results_root_dir
         self.results = ExperimentResults(self)
-
-    @property
-    def ckpt_dir(self):
-        return os.path.join(self.ckpt_root_dir, self.config.experiment_name)
-
-    @property
-    def results_dir(self):
-        return os.path.join(self.results_root_dir, self.config.experiment_name)
 
     def run(self, memory_limit: Optional[int] = None):
         # if there is a memory limit, set it on the config
@@ -49,11 +38,12 @@ class Experiment:
             best_params = search()
             self.config.merge(best_params)
 
+        # train and get results
         for run_no in range(len(self.results) + 1, self.config.n_runs + 1):
             seed = util.new_random_seed()
-            util.set_random_seed(seed)
+            seed_everything(seed)
 
-            model = self.train(self.config, seed)
+            model = self.train()
 
             # obtain evaluation results and predictions
             train_metric, train_preds = model.evaluate(self.data.train())
@@ -73,13 +63,12 @@ class Experiment:
         # report results
         tqdm.write(self.results.summarize())
 
-    def train(self, config: ExperimentConfig, seed: int = 42) -> TrainableModel:
-        util.set_random_seed(seed)
-
-        model = self.model_constructor(**config.model)
-        model = training.TrainableModel(model, config)
-        model.train(self.data.train(), self.data.dev())
-
+    def train(self) -> LightningModule:
+        model = self.model_constructor(self.config.model)
+        trainer = get_trainer(self.config)
+        train_dataloader = self.data.train_dataloader()
+        val_dataloader = self.data.val_dataloader()
+        trainer.fit(model, train_dataloader, val_dataloader)
         return model
 
     def train_and_validate(self, config: ExperimentConfig, seed: int = 42) -> \

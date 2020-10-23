@@ -1,23 +1,9 @@
-from .config import *
+from pytorch_lightning import Trainer
 
-"""PyTorch training utilities."""
-import os
-
-from torch.nn import functional as F
-import torch
-from tqdm.notebook import tqdm
-
-from . import config
-from . import anneal, metrics, opt, stopping
+from hsdl.experiments.config import ExperimentConfig
 
 
-
-
-
-
-
-
-
-
-
-
+def get_trainer(config: ExperimentConfig) -> Trainer:
+    # make sure to set deterministic=True for reproducibility
+    # https://pytorch-lightning.readthedocs.io/en/stable/trainer.html
+    pass
