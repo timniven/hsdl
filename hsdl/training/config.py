@@ -4,8 +4,15 @@ from hsdl.config import Config
 class TrainingConfig(Config):
     """Config class for common training settings."""
 
-    def __init__(self, n_epochs, seed, train_batch_size, metric,
-                 tune_batch_size, run_no=1, memory_limit=None, no_cuda=False,
+    def __init__(self,
+                 n_epochs: int,
+                 seed: int,
+                 train_batch_size: int,
+                 metric: Metric,
+                 tune_batch_size: int,
+                 run_no: int = 1,
+                 auto_scale_batch_size: bool = False,
+                 no_cuda=False,
                  **kwargs):
         super().__init__(**kwargs)
         # NOTE: this is a target, but account for memory limit, so use property
@@ -16,7 +23,8 @@ class TrainingConfig(Config):
         self.n_epochs = n_epochs
         self.__tune_batch_size = tune_batch_size
         self.metric = metric
-        self.__memory_limit = memory_limit
+        self.auto_scale_batch_size = 'binsearch' \
+            if auto_scale_batch_size else None
 
     @property
     def grad_accum_steps(self):

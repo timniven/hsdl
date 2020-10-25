@@ -1,9 +1,12 @@
 from typing import Callable, Optional, Tuple
 
 from pytorch_lightning import LightningDataModule, LightningModule, \
-    seed_everything
+    seed_everything, Trainer
+from pytorch_lightning.loggers import TestTubeLogger
+from torch.utils.data import DataLoader
 
 from hsdl import util
+from hsdl.config import Config
 from hsdl.experiments.config import ExperimentConfig
 from hsdl.experiments.results import ExperimentResults
 from hsdl.parameter_search import ParameterSearch, SearchSpace
@@ -17,7 +20,7 @@ class Experiment:
     """Default experiment class and algorithm."""
 
     def __init__(self,
-                 model_constructor: Callable,
+                 model_constructor: Callable[[Config], LightningModule],
                  data: LightningDataModule,
                  config: ExperimentConfig,
                  search_space: Optional[SearchSpace] = None):
@@ -25,63 +28,56 @@ class Experiment:
         self.data = data
         self.config = config
         self.search_space = search_space
-        self.results = ExperimentResults(self)
+        self.logger = TestTubeLogger(
+            name=config.experiment_name,
+            save_dir=config.results_dir)
+        self.results = ExperimentResults(self.logger.experiment)
 
-    def run(self, memory_limit: Optional[int] = None):
-        # if there is a memory limit, set it on the config
-        if memory_limit:
-            self.config.training.memory_limit = memory_limit
-
+    def run(self):
         # do parameter search if required
         if self.search_space:
+            # TODO: is the second argument not redundant?
             search = ParameterSearch(self, self.search_space)
             best_params = search()
             self.config.merge(best_params)
 
         # train and get results
-        for run_no in range(len(self.results) + 1, self.config.n_runs + 1):
+        for run_no in range(self.results.n_runs_completed + 1,
+                            self.config.n_runs + 1):
             seed = util.new_random_seed()
-            seed_everything(seed)
-
-            model = self.train()
-
-            # obtain evaluation results and predictions
-            train_metric, train_preds = model.evaluate(self.data.train())
-            dev_metric, dev_preds = model.evaluate(self.data.dev())
-            test_metric, test_preds = model.evaluate(self.data.test())
-
-            # save metrics
-            self.results.report_metric(run_no, seed, 'train', train_metric)
-            self.results.report_metric(run_no, seed, 'dev', dev_metric)
-            self.results.report_metric(run_no, seed, 'test', test_metric)
-
-            # save predictions
-            self.results.report_preds(run_no, seed, 'train', train_preds)
-            self.results.report_preds(run_no, seed, 'dev', dev_preds)
-            self.results.report_preds(run_no, seed, 'test', test_preds)
+            trainer = self.train(seed)
+            self.test_all(trainer, run_no, seed)
 
         # report results
         tqdm.write(self.results.summarize())
 
-    def train(self) -> LightningModule:
+    def train(self, seed: int, debug: bool = False) -> Trainer:
+        seed_everything(seed)
         model = self.model_constructor(self.config.model)
-        trainer = get_trainer(self.config)
+        trainer = get_trainer(config=self.config,
+                              logger=self.logger,
+                              debug=debug)
         train_dataloader = self.data.train_dataloader()
         val_dataloader = self.data.val_dataloader()
         trainer.fit(model, train_dataloader, val_dataloader)
-        return model
+        return trainer
 
-    def train_and_validate(self, config: ExperimentConfig, seed: int = 42) -> \
-            Tuple[float, float]:
-        # this is for parameter search
+    def test_all(self, trainer: Trainer, run_no: int, seed: int):
+        # TODO: mightn't always have train, val, test
+        #  - so provide a way to control that
+        train_metric, train_preds = trainer.test(
+            self.data.train_dataloader())
+        dev_metric, dev_preds = trainer.test(
+            self.data.val_dataloader())
+        test_metric, test_preds = trainer.test(
+            self.data.test_dataloader())
 
-        util.set_random_seed(seed)
+        self.logger.experiment.log({
+            'run_no': run_no,
+            'seed': seed,
+            'train_metric': train_metric,
+            'dev_metric': dev_metric,
+            'test_metric': test_metric,
+        })
 
-        # init model and train
-        model = self.train(config, seed)
-
-        # obtain evaluation results and predictions
-        train_metric, _ = model.evaluate(self.data.train())
-        dev_metric, _ = model.evaluate(self.data.dev())
-
-        return train_metric, dev_metric
+        # TODO: how to log preds?
