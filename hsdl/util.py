@@ -1,9 +1,20 @@
 """General utilities."""
 import json
+import math
 import random
+from typing import Dict
 
 import numpy as np
 import torch
+try:
+    get_ipython()
+    from tqdm.notebook import tqdm
+except:
+    from tqdm import tqdm
+
+
+# define a global pad for all models so I can refer to it when saving attentions
+pad = '<PAD>'
 
 
 class IxDict:
@@ -55,6 +66,49 @@ class IxDict:
             f.write(json.dumps(self.entities))
 
 
+class TqdmWrapper:
+    """Wraps tqdm progress bars with a restart method and base description."""
+
+    def __init__(self, total, desc):
+        self.pbar = tqdm(total=total, desc=desc)
+        self.base_desc = desc
+
+    def reset(self, total=None):
+        self.pbar.reset(total)
+        self.restart()
+
+    def restart(self):
+        self.pbar.n = 0
+        self.pbar.last_print_n = 0
+        self.pbar.refresh()
+        self.pbar.set_description(self.base_desc)
+
+    def set_description(self, desc):
+        desc = f'{self.base_desc}: {desc}'
+        self.pbar.set_description(desc)
+
+    def update(self):
+        self.pbar.update()
+
+
+def aligned_print(params: Dict, indent: int = 0) -> None:
+    keys = list(params.keys())
+    values = list(params.values())
+    # assume keys and values already sorted
+    key_lengths = [len(x) for x in keys]
+    # reason for +1: if on the border, i.e. 16 on 2, need to count as 3.
+    # noting that a tab in python 3 is 8 spaces.
+    key_tab_depth = [math.ceil((x + 1) / 8.) for x in key_lengths]
+    max_tab = max(key_tab_depth) + 1
+    num_tabs = [max_tab - x for x in key_tab_depth]
+    for ix in range(len(keys)):
+        prefix = ''
+        if indent:
+            prefix = '\t' * indent
+        tqdm.write('%s%s%s%s'
+                   % (prefix, keys[ix], '\t' * num_tabs[ix], values[ix]))
+
+
 def entropy(p, axis=0):
     """Calculate information entropy.
 
@@ -71,8 +125,26 @@ def entropy(p, axis=0):
     return h
 
 
+def get_pbar_name(pbar) -> str:
+    pbar_name = pbar.desc.replace(':', '')
+    if '(' in pbar_name:
+        pbar_name = pbar_name.split('(')[0].strip()
+    return pbar_name
+
+
+def get_tqdm():
+    return tqdm
+
+
 def new_random_seed():
     return random.choice(range(10000))
+
+
+def reset_pbar(pbar: tqdm) -> None:
+    pbar.n = 0
+    pbar.last_print_n = 0
+    pbar.refresh()
+    pbar.set_description(get_pbar_name(pbar))
 
 
 def set_random_seed(seed):

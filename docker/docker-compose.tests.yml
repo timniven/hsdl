@@ -1,0 +1,9 @@
+version: "3.3"
+
+services:
+
+  hsdl-test:
+    image: timniven/hsdl:latest
+    stop_signal: SIGKILL
+    working_dir: /hsdl
+    command: run_tests.sh
