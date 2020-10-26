@@ -1,9 +1,9 @@
-from hsdl.annealing import AnnealingConfig
+from hsdl.annealing.config import AnnealingConfig
 from hsdl.config import Config
-from hsdl.metrics import MetricConfig
-from hsdl.optimization import OptimizationConfig
-from hsdl.stopping import StoppingConfig
-from hsdl.training import TrainingConfig
+from hsdl.metrics.config import MetricConfig
+from hsdl.optimization.config import OptimizationConfig
+from hsdl.stopping.config import StoppingConfig
+from hsdl.training.config import TrainingConfig
 
 
 class ExperimentConfig(Config):

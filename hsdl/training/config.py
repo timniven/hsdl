@@ -8,7 +8,7 @@ class TrainingConfig(Config):
                  n_epochs: int,
                  seed: int,
                  train_batch_size: int,
-                 metric: Metric,
+                 metric,
                  tune_batch_size: int,
                  run_no: int = 1,
                  auto_scale_batch_size: bool = False,

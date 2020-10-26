@@ -2,6 +2,7 @@
 
 docker run \
     --rm \
+    --gpus all \
     -v ${PWD}:/hsdl/ \
     -w /hsdl \
     timniven/hsdl:base \

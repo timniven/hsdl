@@ -1,13 +1,11 @@
-from typing import Callable, Optional, Tuple
+from typing import Callable, Optional
 
 from pytorch_lightning import LightningDataModule, LightningModule, \
     seed_everything, Trainer
 from pytorch_lightning.loggers import TestTubeLogger
-from torch.utils.data import DataLoader
 
 from hsdl import util
-from hsdl.config import Config
-from hsdl.experiments.config import ExperimentConfig
+from hsdl.experiments.config import ExperimentConfig as Config
 from hsdl.experiments.results import ExperimentResults
 from hsdl.parameter_search import ParameterSearch, SearchSpace
 from hsdl.training import get_trainer
@@ -20,64 +18,60 @@ class Experiment:
     """Default experiment class and algorithm."""
 
     def __init__(self,
-                 model_constructor: Callable[[Config], LightningModule],
+                 module_constructor: Callable[[Config], LightningModule],
                  data: LightningDataModule,
-                 config: ExperimentConfig,
-                 search_space: Optional[SearchSpace] = None):
-        self.model_constructor = model_constructor
+                 config: Config,
+                 search_space: SearchSpace):
+        self.module_constructor = module_constructor
         self.data = data
         self.config = config
         self.search_space = search_space
-        self.logger = TestTubeLogger(
-            name=config.experiment_name,
-            save_dir=config.results_dir)
-        self.results = ExperimentResults(self.logger.experiment)
+        self.results = ExperimentResults(config)
 
     def run(self):
         # do parameter search if required
-        if self.search_space:
-            # TODO: is the second argument not redundant?
-            search = ParameterSearch(self, self.search_space)
+        if self.search_space and not self.results.best_params:
+            search = ParameterSearch(self)
             best_params = search()
+            self.results.save_best_params(best_params)
             self.config.merge(best_params)
 
         # train and get results
         for run_no in range(self.results.n_runs_completed + 1,
                             self.config.n_runs + 1):
             seed = util.new_random_seed()
-            trainer = self.train(seed)
+            trainer = self.train(seed, run_no)
             self.test_all(trainer, run_no, seed)
 
         # report results
         tqdm.write(self.results.summarize())
 
-    def train(self, seed: int, debug: bool = False) -> Trainer:
+    def train(self,
+              seed: int,
+              run_no: Optional[int] = None,
+              debug: bool = False) -> Trainer:
         seed_everything(seed)
-        model = self.model_constructor(self.config.model)
+        module = self.module_constructor(self.config)
+        logger = TestTubeLogger(
+            name=self.config.experiment_name,
+            save_dir=self.config.results_dir,
+            version=run_no)
         trainer = get_trainer(config=self.config,
-                              logger=self.logger,
+                              logger=logger,
                               debug=debug)
         train_dataloader = self.data.train_dataloader()
         val_dataloader = self.data.val_dataloader()
-        trainer.fit(model, train_dataloader, val_dataloader)
+        trainer.fit(module, train_dataloader, val_dataloader)
         return trainer
 
     def test_all(self, trainer: Trainer, run_no: int, seed: int):
-        # TODO: mightn't always have train, val, test
-        #  - so provide a way to control that
-        train_metric, train_preds = trainer.test(
-            self.data.train_dataloader())
-        dev_metric, dev_preds = trainer.test(
-            self.data.val_dataloader())
-        test_metric, test_preds = trainer.test(
-            self.data.test_dataloader())
+        train_metric = trainer.test(self.data.train_dataloader())
+        val_metric = trainer.test(self.data.val_dataloader())
+        test_metric = trainer.test(self.data.test_dataloader())
 
-        self.logger.experiment.log({
-            'run_no': run_no,
-            'seed': seed,
-            'train_metric': train_metric,
-            'dev_metric': dev_metric,
-            'test_metric': test_metric,
-        })
-
-        # TODO: how to log preds?
+        self.results.report_metric(
+            run_no=run_no, seed=seed, subset='train', metric=train_metric)
+        self.results.report_metric(
+            run_no=run_no, seed=seed, subset='val', metric=val_metric)
+        self.results.report_metric(
+            run_no=run_no, seed=seed, subset='test', metric=test_metric)
