@@ -119,7 +119,7 @@ config = ExperimentConfig(
     stopping=NoEarlyStoppingConfig(),
     results_dir='temp',
     ckpt_dir='temp',
-    n_runs=2)
+    n_runs=10)
 
 search_space = SearchSpace([
     SearchSubSpace([GridDimension('optimization.lr', [0.3, 0.1, 0.09])])

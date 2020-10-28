@@ -1,3 +1,4 @@
+import copy
 import itertools
 import json
 import os
@@ -7,7 +8,7 @@ from typing import Dict, List
 import numpy as np
 import pandas as pd
 
-from hsdl import util
+from hsdl import metrics, util
 
 
 tqdm = util.get_tqdm()
@@ -97,22 +98,23 @@ class SearchResults:
         self.space = experiment.search_space
         self.results = self.new_or_load_results()
 
-    def __contains__(self, item):
-        return item in self.results
+    def __contains__(self, ix: int):
+        return ix in self.results.ix.unique()
 
     def best(self):
         grouping = ['ix']
         grouping += self.space.attrs
-        results = self.results.copy().reset_index()
-        means = results.groupby(grouping).mean()
-        best_score = self.experiment.config.metric.best(means.dev.values)
-        best_params = means[means.dev == best_score]
+        means = self.results.groupby(grouping).mean().reset_index()
+        metric = metrics.get(self.experiment.config.metric)
+        best_metric = metric.best(means.val.values)
+        best_params = means[means.val == best_metric]
         best_params = best_params[grouping]
-        return best_params.to_dict('records')
+        return best_metric, best_params.to_dict('records')
 
     @property
     def file_path(self):
-        return os.path.join(self.experiment.results_dir,
+        return os.path.join(self.experiment.config.results_dir,
+                            self.experiment.config.experiment_name,
                             'param_search_results.csv')
 
     def load(self):
@@ -127,42 +129,42 @@ class SearchResults:
     def new_results(self):
         columns = ['ix']
         columns += self.space.attrs
-        columns += ['train', 'dev']
+        columns += ['train', 'val']
         return pd.DataFrame(columns=columns, data=[])
 
-    def report(self, ix: int, params: Dict, train: float, dev: float):
-        self.results.append({
-            'ix': ix,
-            **params,
-            'train': train,
-            'dev': dev,
-        })
+    def report(self, ix: int, params: Dict, train: float, val: float):
+        self.results = self.results.append({
+                'ix': ix,
+                **params,
+                'train': train,
+                'val': val,
+            },
+            ignore_index=True)
         self.save()
 
     def save(self):
-        # index True, since ix is index
-        self.results.to_csv(self.file_path)
+        self.results.to_csv(self.file_path, index=False)
 
 
 class ParameterSearch:
 
-    def __init__(self, experiment, k_tie_break: int = 5):
+    def __init__(self, experiment, k_tie_break: int = 1):
         self.experiment = experiment
         self.search_space = experiment.search_space
-        self.search_results = SearchResults(experiment)
+        self.results = SearchResults(experiment)
         self.k_tie_break = k_tie_break
 
     def __call__(self):
         # search over the space
         with tqdm(total=len(self.search_space), desc='Param Combination') \
                 as pbar:
-            for ix in range(len(self.search_space)):
-                if ix not in self.search_results:
+            for ix in range(1, len(self.search_space) + 1):
+                if ix not in self.results:
                     self.evaluate(ix)
                 pbar.update()
 
         # get best results after first pass
-        best_metric, best_params = self.search_results.best()
+        best_metric, best_params = self.results.best()
 
         # tie break if needed
         while len(best_params) > 1:
@@ -171,13 +173,14 @@ class ParameterSearch:
             tqdm.write('Performing tie break...')
             with tqdm(total=self.k_tie_break) as pbar:
                 for _ in range(self.k_tie_break):
-                    seed = random.choice(range(10000))
                     for params in best_params:
+                        seed = random.choice(range(10000))
                         self.evaluate(params['ix'], seed)
                         pbar.update()
-            best_metric, best_params = self.search_results.best()
+            best_metric, best_params = self.results.best()
 
         best_params = best_params[0]
+        best_params.pop('ix')
         tqdm.write('Grid search complete. Best: %s' % best_metric)
         util.aligned_print(best_params, indent=1)
 
@@ -188,17 +191,20 @@ class ParameterSearch:
 
     @property
     def best_params_path(self):
-        return os.path.join(self.experiment.results_dir, 'best_params.json')
+        return os.path.join(self.experiment.config.results_dir,
+                            self.experiment.config.experiment_name,
+                            'best_params.json')
 
     def evaluate(self, ix: int, seed=42):
-        config = self.experiment.config.copy()
-        params = self.search_space.get_params(ix)
-        config = config.merge(params)
+        config = copy.deepcopy(self.experiment.config)
+        params = self.search_space[ix]
+        config.merge(params)
         tqdm.write('Grid search for param combination %s/%s...'
                    % (ix, len(self.search_space)))
         util.aligned_print(params, indent=1)
 
-        train_metric, dev_metric = self.experiment. \
-            train_and_validate(config, seed)
+        _, module = self.experiment.train(config, seed)
+        train_metric = self.experiment.test_train(module)
+        val_metric = self.experiment.test_val(module)
 
-        self.search_results.report(ix, params, train_metric, dev_metric)
+        self.results.report(ix, params, train_metric, val_metric)

@@ -26,6 +26,8 @@ class Config(Mapping):
 
     def merge(self, params: Dict):
         for param, value in params.items():
+            if param == 'ix':
+                continue
             if '.' in param:
                 attrs = param.split('.')
                 o = self
