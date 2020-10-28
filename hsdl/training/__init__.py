@@ -9,4 +9,9 @@ def get_trainer(config,  # ExperimentConfig
                 debug: bool) -> Trainer:
     # make sure to set deterministic=True for reproducibility
     # https://pytorch-lightning.readthedocs.io/en/stable/trainer.html
-    pass
+    return Trainer(
+        logger=logger,
+        max_epochs=config.training.n_epochs,
+        gpus=1,
+
+    )

@@ -1,7 +1,8 @@
+import os
 from typing import Callable, Optional
 
 from pytorch_lightning import LightningDataModule, LightningModule, \
-    seed_everything, Trainer
+    seed_everything
 from pytorch_lightning.loggers import TestTubeLogger
 
 from hsdl import util
@@ -27,6 +28,8 @@ class Experiment:
         self.config = config
         self.search_space = search_space
         self.results = ExperimentResults(config)
+        if not os.path.exists(config.results_dir):
+            os.mkdir(config.results_dir)
 
     def run(self):
         # do parameter search if required
@@ -40,8 +43,8 @@ class Experiment:
         for run_no in range(self.results.n_runs_completed + 1,
                             self.config.n_runs + 1):
             seed = util.new_random_seed()
-            trainer = self.train(seed, run_no)
-            self.test_all(trainer, run_no, seed)
+            module = self.train(seed, run_no)
+            self.test_all(module, run_no, seed)
 
         # report results
         tqdm.write(self.results.summarize())
@@ -49,7 +52,7 @@ class Experiment:
     def train(self,
               seed: int,
               run_no: Optional[int] = None,
-              debug: bool = False) -> Trainer:
+              debug: bool = False) -> LightningModule:
         seed_everything(seed)
         module = self.module_constructor(self.config)
         logger = TestTubeLogger(
@@ -62,12 +65,32 @@ class Experiment:
         train_dataloader = self.data.train_dataloader()
         val_dataloader = self.data.val_dataloader()
         trainer.fit(module, train_dataloader, val_dataloader)
-        return trainer
+        return module
 
-    def test_all(self, trainer: Trainer, run_no: int, seed: int):
-        train_metric = trainer.test(self.data.train_dataloader())
-        val_metric = trainer.test(self.data.val_dataloader())
-        test_metric = trainer.test(self.data.test_dataloader())
+    def test_all(self, module: LightningModule, run_no: int, seed: int):
+        # NOTE: couldn't get trainer.test to work for me, so doing it manually
+        # TODO: this is not flexible in any way to the specifics of data & model
+        module.train_metric.reset()
+        for batch in self.data.train_dataloader():
+            X, y = batch
+            preds = module(X)
+            module.train_metric(preds, y)
+        train_metric = float(
+            module.train_metric.compute().detach().cpu().numpy())
+
+        module.val_metric.reset()
+        for batch in self.data.val_dataloader():
+            X, y = batch
+            preds = module(X)
+            module.val_metric(preds, y)
+        val_metric = float(module.val_metric.compute().detach().cpu().numpy())
+
+        module.test_metric.reset()
+        for batch in self.data.test_dataloader():
+            X, y = batch
+            preds = module(X)
+            module.test_metric(preds, y)
+        test_metric = float(module.test_metric.compute().detach().cpu().numpy())
 
         self.results.report_metric(
             run_no=run_no, seed=seed, subset='train', metric=train_metric)
@@ -75,3 +98,6 @@ class Experiment:
             run_no=run_no, seed=seed, subset='val', metric=val_metric)
         self.results.report_metric(
             run_no=run_no, seed=seed, subset='test', metric=test_metric)
+
+        # this return is for testing
+        return train_metric, val_metric, test_metric
