@@ -1,5 +1,4 @@
-from typing import Callable
-
+from pytorch_lightning import metrics as pl_metrics
 from sklearn import metrics as sklearn_metrics
 import numpy as np
 

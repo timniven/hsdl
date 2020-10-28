@@ -1,4 +1,4 @@
-from hsdl.config import Config
+from hsdl.config.base import Config
 
 
 class AnnealingConfig(Config):

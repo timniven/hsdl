@@ -1,5 +1,7 @@
+from typing import Union
+
 from hsdl.annealing.config import AnnealingConfig
-from hsdl.config import Config
+from hsdl.config.base import Config
 from hsdl.metrics.config import MetricConfig
 from hsdl.optimization.config import OptimizationConfig
 from hsdl.stopping.config import StoppingConfig
@@ -11,7 +13,7 @@ class ExperimentConfig(Config):
 
     def __init__(self,
                  experiment_name: str,
-                 model: Config,
+                 model: Union[Config, None],
                  metric: MetricConfig,
                  training: TrainingConfig,
                  annealing: AnnealingConfig,

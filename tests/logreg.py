@@ -7,6 +7,10 @@ from torch import nn, optim
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset
 
+from hsdl import config as cfg
+from hsdl.experiments import Experiment, ExperimentConfig
+from hsdl.parameter_search import SearchSpace, SearchSubSpace, GridDimension
+
 
 class IrisBatch:
 
@@ -43,6 +47,10 @@ class IrisData(LightningDataModule):
 
     def test_dataloader(self) -> DataLoader:
         return DataLoader(self.test, batch_size=16)
+
+
+class LogisticRegressionConfig(cfg.Config):
+    pass
 
 
 class LogisticRegression(LightningModule):
@@ -89,3 +97,31 @@ class LogisticRegression(LightningModule):
 
     def configure_optimizers(self):
         return optim.Adam(self.parameters(), lr=0.1)
+
+
+config = ExperimentConfig(
+    experiment_name='test_logreg',
+    model=None,
+    metric=cfg.MetricConfig(
+        name='acc',
+        criterion='max'),
+    training=cfg.TrainingConfig(
+        n_epochs=2,
+        train_batch_size=16,
+        tune_batch_size=16),
+    annealing=cfg.NoAnnealingConfig(),
+    optimization=cfg.AdamConfig(lr=0.1),
+    stopping=cfg.NoEarlyStoppingConfig(),
+    results_dir='temp',
+    ckpt_dir='temp',
+    n_runs=2)
+
+search_space = SearchSpace([
+    SearchSubSpace([GridDimension('optimization.lr', [0.3, 0.1, 0.09])])
+])
+
+experiment = Experiment(
+    module_constructor=LogisticRegression,
+    data=IrisData(),
+    config=config,
+    search_space=search_space)

@@ -3,8 +3,8 @@ import unittest
 from torch import nn
 from torch.optim import Adam, lr_scheduler
 
-from hsdl import annealing
-from hsdl.annealing import config
+from hsdl.annealing import get
+from hsdl.annealing.config import *
 
 
 class TestGet(unittest.TestCase):
@@ -14,10 +14,9 @@ class TestGet(unittest.TestCase):
         self.optimizer = Adam(linear.parameters())
 
     def test_none(self):
-        anneal = annealing.get(config.NoAnnealingConfig(), self.optimizer)
+        anneal = get(NoAnnealingConfig(), self.optimizer)
         self.assertIsNone(anneal)
 
     def test_plateau(self):
-        anneal = annealing.get(config.ReduceLROnPlateauConfig(0.5, 1),
-                               self.optimizer)
+        anneal = get(ReduceLROnPlateauConfig(0.5, 1), self.optimizer)
         self.assertIsInstance(anneal, lr_scheduler.ReduceLROnPlateau)

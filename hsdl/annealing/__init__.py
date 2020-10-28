@@ -1,6 +1,6 @@
 from torch.optim import Optimizer, lr_scheduler
 
-from .config import *
+from hsdl.annealing.config import AnnealingConfig
 
 
 def get(config: AnnealingConfig, optimizer: Optimizer):

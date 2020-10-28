@@ -1,4 +1,4 @@
-from hsdl.config import Config
+from hsdl.config.base import Config
 
 
 class TrainingConfig(Config):
@@ -6,11 +6,8 @@ class TrainingConfig(Config):
 
     def __init__(self,
                  n_epochs: int,
-                 seed: int,
                  train_batch_size: int,
-                 metric,
                  tune_batch_size: int,
-                 run_no: int = 1,
                  auto_scale_batch_size: bool = False,
                  no_cuda=False,
                  **kwargs):
@@ -18,11 +15,8 @@ class TrainingConfig(Config):
         # NOTE: this is a target, but account for memory limit, so use property
         self.__train_batch_size = train_batch_size
         self.no_cuda = no_cuda
-        self.seed = seed
-        self.run_no = run_no
         self.n_epochs = n_epochs
         self.__tune_batch_size = tune_batch_size
-        self.metric = metric
         self.auto_scale_batch_size = 'binsearch' \
             if auto_scale_batch_size else None
 

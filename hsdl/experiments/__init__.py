@@ -1,3 +1,3 @@
-from .config import ExperimentConfig
-from .experiment import Experiment
-from .results import ExperimentResults
+from hsdl.experiments.config import ExperimentConfig
+from hsdl.experiments.experiment import Experiment
+from hsdl.experiments.results import ExperimentResults

@@ -59,33 +59,32 @@ class SearchSubSpace:
 
 
 class SearchSpace:
-    """A search space is the cross product of one or more sub spaces."""
+    """A search space is the union of cross products of 1+ sub spaces."""
 
     def __init__(self, sub_spaces: List[SearchSubSpace]):
         self.space = self.build_space(sub_spaces)
-        self.attrs = self.space.columns  # NOTE: ix is index
+        self.attrs = list(self.space.columns)  # NOTE: ix is index
 
     def __len__(self):
         return len(self.space)
 
-    def get_params(self, ix: int):
-        return self.space.iloc[ix].to_dict()
+    def __getitem__(self, ix: int):
+        return self.space.loc[ix].to_dict()
 
-    def build_space(self, sub_spaces: List[SearchSubSpace]):
+    @staticmethod
+    def build_space(sub_spaces: List[SearchSubSpace]) -> pd.DataFrame:
         space = []
         ix = 0
         for sub_space in sub_spaces:
             attrs = [x.attr for x in sub_space.dimensions]
             values = [x.values for x in sub_space.dimensions]
-            value_space = itertools.product(values)
+            value_space = itertools.product(*values)
             for values in value_space:
                 ix += 1
-                for attr, value in zip(attrs, values):
-                    space.append({
-                        'ix': ix,
-                        'attr': attr,
-                        'value': value,
-                    })
+                row = {'ix': ix}
+                for j in range(len(attrs)):
+                    row[attrs[j]] = values[j]
+                space.append(row)
         space = pd.DataFrame(space)
         space.set_index('ix', inplace=True)
         return space
