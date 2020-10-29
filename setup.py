@@ -6,7 +6,7 @@ with open('requirements.txt') as f:
 
 
 setuptools.setup(
-    name='dtl_nlp',
+    name='hsdl',
     version='2020.10.29',
     author='timniven',
     author_email='tim.niven.public@gmail.com',
