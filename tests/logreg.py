@@ -87,7 +87,7 @@ class LogisticRegression(LightningModule):
         self.val_metric = Accuracy()
         self.test_metric = Accuracy()
 
-    def forward(self, X: Tensor) -> np.array:
+    def forward(self, X: Tensor) -> Tensor:
         logits = self.linear(X.float())
         return logits
 
