@@ -39,7 +39,10 @@ class ExperimentResults:
 
     @property
     def n_runs_completed(self):
-        return self.df_metrics().run_no.max()
+        df = self.df_metrics()
+        if len(df) == 0:
+            return 0
+        return int(df.run_no.max())
 
     def report_metric(self, run_no: int, seed: int, subset: str, metric: float):
         df = self.df_metrics()

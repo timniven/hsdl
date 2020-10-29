@@ -1,4 +1,6 @@
 """Linear regression experiment test case."""
+import os
+import shutil
 from typing import List
 
 import numpy as np
@@ -17,6 +19,19 @@ from hsdl.optimization.config import AdamConfig
 from hsdl.parameter_search import SearchSpace, SearchSubSpace, GridDimension
 from hsdl.stopping.config import NoEarlyStoppingConfig
 from hsdl.training.config import TrainingConfig
+
+
+exp_dir = 'temp/test_logreg'
+
+
+def clear_dir():
+    if os.path.exists(exp_dir):
+        shutil.rmtree(exp_dir)
+
+
+def create_dir():
+    if not os.path.exists(exp_dir):
+        os.mkdir(exp_dir)
 
 
 class IrisDataset(Dataset):
@@ -101,7 +116,7 @@ class LogisticRegression(LightningModule):
                  on_step=False)
 
     def configure_optimizers(self):
-        return optim.Adam(self.parameters(), lr=0.1)
+        return optim.Adam(self.parameters(), lr=self.config.optimization.lr)
 
 
 config = ExperimentConfig(
@@ -111,14 +126,13 @@ config = ExperimentConfig(
         name='acc',
         criterion='max'),
     training=TrainingConfig(
-        n_epochs=2,
+        max_epochs=2,
         train_batch_size=16,
         tune_batch_size=16),
     annealing=NoAnnealingConfig(),
     optimization=AdamConfig(lr=0.1),
     stopping=NoEarlyStoppingConfig(),
     results_dir='temp',
-    ckpt_dir='temp',
     n_runs=10)
 
 search_space = SearchSpace([

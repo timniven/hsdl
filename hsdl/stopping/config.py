@@ -14,10 +14,16 @@ class NoEarlyStoppingConfig(StoppingConfig):
         super().__init__(strategy=None)
 
 
-class NoDevImprovementConfig(StoppingConfig):
+class NoValImprovementConfig(StoppingConfig):
 
-    def __init__(self, patience, k, metric):
-        super().__init__(strategy='no_dev_improvement')
+    def __init__(self,
+                 patience: int,
+                 k: int,
+                 metric_config):
+        if k > patience:
+            raise ValueError(f'k ({k}) cannot be '
+                             f'greater than patience ({patience}).')
+        super().__init__(strategy='no_val_improvement')
         self.patience = patience
         self.k = k
-        self.metric = metric
+        self.metric_config = metric_config

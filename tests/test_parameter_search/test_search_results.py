@@ -46,7 +46,8 @@ class TestSearchResults(unittest.TestCase):
         results.report(2, {'optimization.lr': 0.3}, 0.7, 0.7)
         results.report(2, {'optimization.lr': 0.3}, 0.7, 0.5)
         expected = [{'ix': 2, 'optimization.lr': 0.3}]
-        self.assertEqual(expected, results.best())
+        best_metric, best_params = results.best()
+        self.assertEqual(expected, best_params)
 
     def tearDown(self):
         if os.path.exists(self.results_dir):

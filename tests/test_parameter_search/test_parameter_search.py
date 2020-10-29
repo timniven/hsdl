@@ -16,8 +16,13 @@ class TestParameterSearch(unittest.TestCase):
 
     def test_call(self):
         search = ParameterSearch(logreg.experiment)
-        best_params = search()
-        print(best_params)
+        error = False
+        try:
+            _ = search()
+        except Exception as e:
+            error = True
+            # raise e
+        self.assertFalse(error)
 
     def test_evaluate(self):
         search = ParameterSearch(logreg.experiment)
@@ -27,7 +32,7 @@ class TestParameterSearch(unittest.TestCase):
         self.assertEqual(1.0, result['ix'])
         self.assertEqual(0.3, result['optimization.lr'])
         self.assertEqual(0.70, round(result.train, 2))
-        self.assertEqual(0.66, round(result.val, 2))
+        self.assertEqual(0.80, round(result.val, 2))
 
     def tearDown(self):
         if os.path.exists(self.results_dir):

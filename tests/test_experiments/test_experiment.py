@@ -16,7 +16,7 @@ class TestExperiment(unittest.TestCase):
         experiment = logreg.experiment
         error = False
         try:
-            experiment.train(42)
+            experiment.train(experiment.config, 42)
         except Exception as e:
             error = True
             # raise e  # if debugging
@@ -24,8 +24,8 @@ class TestExperiment(unittest.TestCase):
 
     def test_test_all(self):
         experiment = logreg.experiment
-        trainer = experiment.train(42)
-        train, val, test = experiment.test_all(trainer, 1, 42)
+        trainer, module = experiment.train(experiment.config, 42)
+        train, val, test = experiment.test_all(module, 1, 42)
         self.assertEqual(0.70, round(train, 2))
         self.assertEqual(0.66, round(val, 2))
         self.assertEqual(0.64, round(test, 2))
@@ -33,6 +33,6 @@ class TestExperiment(unittest.TestCase):
     def test_run(self):
         pass
 
-    def tearDown(self):
-        if os.path.exists('temp/test_logreg'):
-            shutil.rmtree('temp/test_logreg')
+    # def tearDown(self):
+    #     if os.path.exists('temp/test_logreg'):
+    #         shutil.rmtree('temp/test_logreg')

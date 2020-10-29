@@ -39,16 +39,27 @@ class GridDimension(SearchDimension):
 class RandomDimension(SearchDimension):
 
     def __init__(self, attr: str, low: float, high: float, k: int,
-                 seed: int = 42, granularity: int = 100):
+                 seed: int = 42, granularity: int = 100,
+                 include_poles: bool = True):
         self.low = low
         self.high = high
         self.k = k
         self.seed = seed
         self.granularity = granularity
+
+        random.seed(seed)
+
         candidates = list(
             np.linspace(self.low, self.high, self.k * granularity))
-        random.seed(seed)
-        values = random.sample(candidates, k=k)
+        if include_poles:
+            candidates = [x for x in candidates if x not in [low, high]]
+            values = [low, high]
+            values += list(random.sample(candidates, k=k-2))
+        else:
+            values = random.sample(candidates, k=k)
+
+        values = list(sorted(values))
+
         super().__init__(attr, values)
 
 

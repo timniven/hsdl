@@ -1,11 +1,6 @@
 from typing import Union
 
-from hsdl.annealing.config import AnnealingConfig
 from hsdl.config.base import Config
-from hsdl.metrics.config import MetricConfig
-from hsdl.optimization.config import OptimizationConfig
-from hsdl.stopping.config import StoppingConfig
-from hsdl.training.config import TrainingConfig
 
 
 class ExperimentConfig(Config):
@@ -14,13 +9,12 @@ class ExperimentConfig(Config):
     def __init__(self,
                  experiment_name: str,
                  model: Union[Config, None],
-                 metric: MetricConfig,
-                 training: TrainingConfig,
-                 annealing: AnnealingConfig,
-                 optimization: OptimizationConfig,
-                 stopping: StoppingConfig,
+                 metric: Config,
+                 training: Config,
+                 annealing: Config,
+                 optimization: Config,
+                 stopping: Config,
                  results_dir: str,
-                 ckpt_dir: str,
                  n_runs: int = 20,
                  **kwargs):
         super().__init__(**kwargs)
@@ -33,4 +27,3 @@ class ExperimentConfig(Config):
         self.stopping = stopping
         self.n_runs = n_runs
         self.results_dir = results_dir
-        self.ckpt_dir = ckpt_dir

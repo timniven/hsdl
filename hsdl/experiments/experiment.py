@@ -55,6 +55,8 @@ class Experiment:
               run_no: Optional[int] = None,
               debug: bool = False) -> Tuple[Trainer, LightningModule]:
         seed_everything(seed)
+        tqdm.write('Running experiment with config:')
+        config.print()
         module = self.module_constructor(config)
         logger = TestTubeLogger(
             name=config.experiment_name,
