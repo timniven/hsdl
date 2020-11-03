@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Any, Dict
+from typing import Any, Dict, Union
 
 import pandas as pd
 
@@ -41,7 +41,7 @@ class ExperimentResults:
         run_folder = os.path.join(self.dir, f'version_{run_no}')
         if not os.path.exists(run_folder):
             raise ValueError(f'Missing folder: {run_folder}')
-        run_path = os.path.join(run_folder, '???')  # TODO
+        run_path = os.path.join(run_folder, 'metrics.csv')
         return pd.read_csv(run_path)
 
     @property

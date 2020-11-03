@@ -38,8 +38,6 @@ class EarlyStopping:
         self.stop_called = stop
         self.stop_reason = reason
         if stop:
-            # TODO
-            logger.log({'epoch_stopped': None})
             return stop, reason
         else:
             return False, None

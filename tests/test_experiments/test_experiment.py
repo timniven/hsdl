@@ -33,6 +33,6 @@ class TestExperiment(unittest.TestCase):
     def test_run(self):
         pass
 
-    # def tearDown(self):
-    #     if os.path.exists('temp/test_logreg'):
-    #         shutil.rmtree('temp/test_logreg')
+    def tearDown(self):
+        if os.path.exists('temp/test_logreg'):
+            shutil.rmtree('temp/test_logreg')
