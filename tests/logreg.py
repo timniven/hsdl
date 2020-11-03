@@ -11,13 +11,14 @@ from torch import nn, optim, Tensor
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset
 
+from hsdl import annealing
 from hsdl.config.base import Config
-from hsdl.annealing.config import NoAnnealingConfig
+from hsdl.annealing.config import ReduceLROnPlateauConfig
 from hsdl.experiments import Experiment, ExperimentConfig
 from hsdl.metrics.config import MetricConfig
 from hsdl.optimization.config import AdamConfig
 from hsdl.parameter_search import SearchSpace, SearchSubSpace, GridDimension
-from hsdl.stopping.config import NoEarlyStoppingConfig
+from hsdl.stopping.config import NoValImprovementConfig
 from hsdl.training.config import TrainingConfig
 
 
@@ -116,29 +117,41 @@ class LogisticRegression(LightningModule):
                  on_step=False)
 
     def configure_optimizers(self):
-        return optim.Adam(self.parameters(), lr=self.config.optimization.lr)
+        optimizer = optim.Adam(
+            self.parameters(), lr=self.config.optimization.lr)
+        if self.config.annealing:
+            annealer = annealing.get(self.config.annealing, optimizer)
+            return {
+                'optimizer': optimizer,
+                'lr_scheduler': annealer,
+                'monitor': 'val_metric',
+            }
+        else:
+            return optimizer
 
 
+metric_config = MetricConfig(name='acc', criterion='max')
 config = ExperimentConfig(
     experiment_name='test_logreg',
     model=None,
-    metric=MetricConfig(
-        name='acc',
-        criterion='max'),
+    metric=metric_config,
     training=TrainingConfig(
         max_epochs=2,
         train_batch_size=16,
         tune_batch_size=16),
-    annealing=NoAnnealingConfig(),
+    annealing=ReduceLROnPlateauConfig(
+        factor=0.2,
+        patience=2),
     optimization=AdamConfig(lr=0.1),
-    stopping=NoEarlyStoppingConfig(),
+    stopping=NoValImprovementConfig(
+        patience=2,
+        k=2,
+        metric_config=metric_config),
     results_dir='temp',
     n_runs=10)
-
 search_space = SearchSpace([
     SearchSubSpace([GridDimension('optimization.lr', [0.3, 0.1, 0.09])])
 ])
-
 experiment = Experiment(
     module_constructor=LogisticRegression,
     data=IrisData(),

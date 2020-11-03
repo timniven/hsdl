@@ -1,7 +1,7 @@
 from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import LightningLoggerBase
 
-from hsdl import annealing, stopping, util
+from hsdl import stopping, util
 from hsdl.experiments.config import ExperimentConfig
 
 
@@ -19,7 +19,6 @@ class HsdlTrainer(Trainer):
             gpus=1,
             gradient_clip_val=config.training.gradient_clip_val)
         self.config = config
-        # self.annealing = annealing.get(config, optimizer)
         self.stopping = stopping.get(config)
         self.stopped = False
 
@@ -30,4 +29,8 @@ class HsdlTrainer(Trainer):
         if stop:
             tqdm.write(reason)
             self.stopped = True
+            return -1
+
+    def on_validation_batch_start(self, batch, batch_idx, dataloader_idx):
+        if self.stopped:
             return -1

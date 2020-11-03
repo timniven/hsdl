@@ -12,7 +12,7 @@ class TestNoValImprovement(unittest.TestCase):
 
     def test_stopping_occurs(self):
         experiment = logreg.experiment
-        experiment.config.training.max_epochs = 20
+        experiment.config.training.max_epochs = 8
         experiment.config.stopping = NoValImprovementConfig(
             patience=2,
             k=2,
@@ -23,7 +23,7 @@ class TestNoValImprovement(unittest.TestCase):
         for run_no in range(1, experiment.results.n_runs_completed + 1):
             df_run = experiment.results.df_run(run_no)
             n_epochs.append(df_run.epoch.max())
-        self.assertNotEqual({20}, set(n_epochs))
+        self.assertNotEqual({8}, set(n_epochs))
 
     def tearDown(self):
         logreg.clear_dir()
