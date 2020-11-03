@@ -25,13 +25,24 @@ class ExperimentResults:
     def best_params_path(self):
         return os.path.join(self.dir, 'best_params.json')
 
-    def df_metrics(self):
+    def df_metrics(self) -> pd.DataFrame:
         if os.path.exists(self.metrics_path):
             return pd.read_csv(self.metrics_path)
         else:
             return pd.DataFrame(
                 columns=['run_no', 'seed', 'subset', self.config.metric.name],
                 data=[])
+
+    def df_run(self, run_no: int) -> Union[pd.DataFrame, None]:
+        if run_no < 1 or run_no > self.n_runs_completed:
+            raise ValueError(f'Invalid run number: {run_no}. '
+                             f'This experiment has {self.n_runs_completed} '
+                             f'completed runs.')
+        run_folder = os.path.join(self.dir, f'version_{run_no}')
+        if not os.path.exists(run_folder):
+            raise ValueError(f'Missing folder: {run_folder}')
+        run_path = os.path.join(run_folder, '???')  # TODO
+        return pd.read_csv(run_path)
 
     @property
     def metrics_path(self):
