@@ -90,23 +90,26 @@ class Experiment:
     def test_train(self, module: LightningModule) -> float:
         module.train_metric.reset()
         for batch in self.data.train_dataloader():
-            X, y = batch
-            preds = module(X)
+            x = batch[0]
+            y = batch[1]
+            preds = module(x)
             module.train_metric(preds, y)
         return float(module.train_metric.compute().detach().cpu().numpy())
 
     def test_val(self, module: LightningModule) -> float:
         module.val_metric.reset()
         for batch in self.data.val_dataloader():
-            X, y = batch
-            preds = module(X)
+            x = batch[0]
+            y = batch[1]
+            preds = module(x)
             module.val_metric(preds, y)
         return float(module.val_metric.compute().detach().cpu().numpy())
 
     def test_test(self, module: LightningModule) -> float:
         module.test_metric.reset()
         for batch in self.data.test_dataloader():
-            X, y = batch
-            preds = module(X)
+            x = batch[0]
+            y = batch[1]
+            preds = module(x)
             module.test_metric(preds, y)
         return float(module.test_metric.compute().detach().cpu().numpy())
