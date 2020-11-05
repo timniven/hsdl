@@ -12,6 +12,7 @@ class TrainingConfig(Config):
                  gradient_clip_val: float = 0.,
                  auto_scale_batch_size: bool = False,
                  no_cuda=False,
+                 num_collate_workers: int = 4,
                  **kwargs):
         super().__init__(**kwargs)
         # NOTE: this is a target, but account for memory limit, so use property
@@ -20,6 +21,7 @@ class TrainingConfig(Config):
         self.max_epochs = max_epochs
         self.min_epochs = min_epochs
         self.gradient_clip_val = gradient_clip_val
+        self.num_collate_workers = num_collate_workers
         self.__tune_batch_size = tune_batch_size
         self.auto_scale_batch_size = 'binsearch' \
             if auto_scale_batch_size else None

@@ -120,7 +120,7 @@ class LogisticRegression(LightningModule):
         optimizer = optim.Adam(
             self.parameters(), lr=self.config.optimization.lr)
         if self.config.annealing:
-            annealer = annealing.get(self.config.annealing, optimizer)
+            annealer = annealing.get(self.config.annealing, optimizer, True)
             return {
                 'optimizer': optimizer,
                 'lr_scheduler': annealer,
@@ -130,11 +130,12 @@ class LogisticRegression(LightningModule):
             return optimizer
 
 
-metric_config = MetricConfig(name='acc', criterion='max')
 config = ExperimentConfig(
     experiment_name='test_logreg',
     model=None,
-    metric=metric_config,
+    metric=MetricConfig(
+        name='acc',
+        criterion='max'),
     training=TrainingConfig(
         max_epochs=2,
         train_batch_size=16,
@@ -145,10 +146,9 @@ config = ExperimentConfig(
     optimization=AdamConfig(lr=0.1),
     stopping=NoValImprovementConfig(
         patience=2,
-        k=2,
-        metric_config=metric_config),
+        k=2),
     results_dir='temp',
-    n_runs=10)
+    n_runs=2)
 search_space = SearchSpace([
     SearchSubSpace([GridDimension('optimization.lr', [0.3, 0.1, 0.09])])
 ])

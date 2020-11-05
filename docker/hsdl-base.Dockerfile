@@ -1,4 +1,4 @@
-FROM nvidia/cuda:10.2-base-ubuntu18.04
+FROM nvidia/cuda:10.1-base-ubuntu18.04
 
 RUN apt update
 RUN apt -y --no-install-recommends install \
@@ -18,4 +18,7 @@ RUN python3.8 -m pip install --upgrade pip
 RUN mkdir /temp
 COPY requirements.txt /temp/requirements.txt
 RUN python3.8 -m pip install -r /temp/requirements.txt
+COPY download_models.py /temp/download_models.py
+RUN python3.8 /temp/download_models.py
+
 RUN rm -r /temp

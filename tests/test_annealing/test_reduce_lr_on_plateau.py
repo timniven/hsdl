@@ -12,10 +12,11 @@ class TestReduceLROnPlateau(unittest.TestCase):
 
     def test_annealing_occurs(self):
         experiment = logreg.experiment
-        experiment.config.training.max_epochs = 8
+        experiment.config.training.max_epochs = 20
         experiment.config.annealing = ReduceLROnPlateauConfig(
             factor=0.2,
-            patience=2)
+            patience=3)
+        experiment.config.stopping = None
         experiment.run()
         # NOTE: this also tests that the logging is occurring
         n_runs = []
@@ -23,6 +24,7 @@ class TestReduceLROnPlateau(unittest.TestCase):
             df_run = experiment.results.df_run(run_no)
             print(df_run)
             raise Exception
+            # TODO: IT WORKS OK, NOT SURE HOW TO TEST HERE THO
             if 'epoch_stopped' in df_run.columns:
                 n_runs.append(df_run.epoch_stopped.max())
         self.assertNotEqual({20}, set(n_runs))

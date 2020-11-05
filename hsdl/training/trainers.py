@@ -1,7 +1,8 @@
 from pytorch_lightning import Trainer
+from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.loggers import LightningLoggerBase
 
-from hsdl import stopping, util
+from hsdl import util
 from hsdl.experiments.config import ExperimentConfig
 
 
@@ -19,18 +20,26 @@ class HsdlTrainer(Trainer):
             gpus=1,
             gradient_clip_val=config.training.gradient_clip_val)
         self.config = config
-        self.stopping = stopping.get(config)
-        self.stopped = False
 
-    def on_train_batch_start(self, batch, batch_idx, dataloader_idx):
-        if self.stopped:
-            return -1
-        stop, reason = self.stopping(self.logger)
-        if stop:
-            tqdm.write(reason)
-            self.stopped = True
-            return -1
+        if config.stopping and config.stopping.strategy == 'no_val_improvement':
+            self.callbacks.append(
+                EarlyStopping(
+                    monitor='val_metric',
+                    patience=config.stopping.patience,
+                    mode=config.metric.criterion))
 
-    def on_validation_batch_start(self, batch, batch_idx, dataloader_idx):
-        if self.stopped:
-            return -1
+        # self.stopping = stopping.get(config)
+        # self.stopped = False
+
+    # def on_train_batch_start(self, batch, batch_idx, dataloader_idx):
+    #     if self.stopped:
+    #         return -1
+    #     stop, reason = self.stopping(self.logger)
+    #     if stop:
+    #         tqdm.write(reason)
+    #         self.stopped = True
+    #         return -1
+    #
+    # def on_validation_batch_start(self, batch, batch_idx, dataloader_idx):
+    #     if self.stopped:
+    #         return -1

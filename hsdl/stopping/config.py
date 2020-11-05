@@ -18,12 +18,10 @@ class NoValImprovementConfig(StoppingConfig):
 
     def __init__(self,
                  patience: int,
-                 k: int,
-                 metric_config):
+                 k: int):
         if k > patience:
             raise ValueError(f'k ({k}) cannot be '
                              f'greater than patience ({patience}).')
         super().__init__(strategy='no_val_improvement')
         self.patience = patience
         self.k = k
-        self.metric_config = metric_config
