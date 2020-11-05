@@ -34,6 +34,7 @@ class Experiment:
     def run(self):
         # do parameter search if required
         if self.search_space and not self.results.best_params:
+            tqdm.write('Running parameter search..')
             search = ParameterSearch(self)
             best_params = search()
             self.results.save_best_params(best_params)
@@ -42,6 +43,7 @@ class Experiment:
         # train and get results
         for run_no in range(self.results.n_runs_completed + 1,
                             self.config.n_runs + 1):
+            tqdm.write('Running final experiments...')
             seed = util.new_random_seed()
             trainer, module = self.train(self.config, seed, run_no)
             self.test_all(module, run_no, seed)
@@ -89,27 +91,39 @@ class Experiment:
 
     def test_train(self, module: LightningModule) -> float:
         module.train_metric.reset()
-        for batch in self.data.train_dataloader():
-            x = batch[0]
-            y = batch[1]
-            preds = module(x)
-            module.train_metric(preds, y)
+        tqdm.write('Evaluating on train...')
+        train = self.data.train_dataloader()
+        with tqdm(total=len(train)) as pbar:
+            for batch in self.data.train_dataloader():
+                x = batch[0]
+                y = batch[1]
+                preds = module(x)
+                module.train_metric(preds, y)
+                pbar.update()
         return float(module.train_metric.compute().detach().cpu().numpy())
 
     def test_val(self, module: LightningModule) -> float:
         module.val_metric.reset()
-        for batch in self.data.val_dataloader():
-            x = batch[0]
-            y = batch[1]
-            preds = module(x)
-            module.val_metric(preds, y)
+        tqdm.write('Evaluating on val...')
+        val = self.data.val_dataloader()
+        with tqdm(total=len(val)) as pbar:
+            for batch in self.data.val_dataloader():
+                x = batch[0]
+                y = batch[1]
+                preds = module(x)
+                module.val_metric(preds, y)
+                pbar.update()
         return float(module.val_metric.compute().detach().cpu().numpy())
 
     def test_test(self, module: LightningModule) -> float:
         module.test_metric.reset()
-        for batch in self.data.test_dataloader():
-            x = batch[0]
-            y = batch[1]
-            preds = module(x)
-            module.test_metric(preds, y)
+        tqdm.write('Evaluating on test...')
+        test = self.data.test_dataloader()
+        with tqdm(total=len(test)) as pbar:
+            for batch in self.data.test_dataloader():
+                x = batch[0]
+                y = batch[1]
+                preds = module(x)
+                module.test_metric(preds, y)
+                pbar.update()
         return float(module.test_metric.compute().detach().cpu().numpy())
