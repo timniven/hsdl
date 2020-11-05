@@ -33,6 +33,8 @@ class Experiment:
 
     def run(self):
         # do parameter search if required
+        print(bool(self.search_space))
+        print(bool(self.results.best_params))
         if self.search_space and not self.results.best_params:
             tqdm.write('Running parameter search..')
             search = ParameterSearch(self)
