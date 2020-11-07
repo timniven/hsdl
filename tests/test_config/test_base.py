@@ -1,6 +1,7 @@
 import unittest
 
 from hsdl.config.base import Config
+from tests import logreg
 
 
 class TestConfig(unittest.TestCase):
@@ -26,3 +27,19 @@ class TestConfig(unittest.TestCase):
         self.assertEqual(4, config['a'])
         self.assertEqual(5, config['b']['c'])
         self.assertEqual(6, config['b']['d']['e'])
+
+    def test_contains_true_when_root_key_exists(self):
+        config = logreg.config
+        self.assertTrue('experiment_name' in config)
+
+    def test_contains_false_when_root_key_does_not_exist(self):
+        config = logreg.config
+        self.assertFalse('some_garbage' in config)
+
+    def test_contains_true_when_child_key_exists(self):
+        config = logreg.config
+        self.assertTrue('annealing.factor' in config)
+
+    def test_contains_false_when_child_key_does_not_exist(self):
+        config = logreg.config
+        self.assertFalse('optimization.some_garbage' in config)

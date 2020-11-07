@@ -26,6 +26,7 @@ class Experiment:
         self.module_constructor = module_constructor
         self.data = data
         self.config = config
+        self.validate_search_space(config, search_space)
         self.search_space = search_space
         self.results = ExperimentResults(config)
         if not os.path.exists(config.results_dir):
@@ -127,3 +128,13 @@ class Experiment:
                 module.test_metric(preds, y)
                 pbar.update()
         return float(module.test_metric.compute().detach().cpu().numpy())
+
+    @staticmethod
+    def validate_search_space(config, search_space):
+        error = False
+        for attr in search_space.attrs:
+            if attr not in config:
+                tqdm.write(f'Search attribute "{attr}" not found in config.')
+                error = True
+        if error:
+            raise ValueError('Search space attribute(s) not found in config.')

@@ -18,6 +18,16 @@ class Config(Mapping):
     def __getitem__(self, key: str):
         return self.__dict__[key]
 
+    def __contains__(self, key: str):
+        attrs = key.split('.')
+        o = self
+        try:
+            for attr in attrs:
+                o = o[attr]
+            return True
+        except KeyError:
+            return False
+
     def __iter__(self):
         return iter(self.to_dict())
 
