@@ -71,6 +71,9 @@ class Experiment:
         train_dataloader = self.data.train_dataloader()
         val_dataloader = self.data.val_dataloader()
         trainer.fit(module, train_dataloader, val_dataloader)
+        module = self.module_constructor.load_from_checkpoint(
+            checkpoint_path=trainer.my_checkpoint_callback.best_model_path,
+            config=config)
         return trainer, module
 
     def test_all(self, module: LightningModule, run_no: int, seed: int):

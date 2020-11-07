@@ -38,7 +38,7 @@ class ExperimentResults:
             raise ValueError(f'Invalid run number: {run_no}. '
                              f'This experiment has {self.n_runs_completed} '
                              f'completed runs.')
-        run_folder = os.path.join(self.dir, f'version_{run_no}')
+        run_folder = os.path.join(self.dir, f'version_{run_no-1}')
         if not os.path.exists(run_folder):
             raise ValueError(f'Missing folder: {run_folder}')
         run_path = os.path.join(run_folder, 'metrics.csv')

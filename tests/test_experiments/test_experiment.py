@@ -33,6 +33,15 @@ class TestExperiment(unittest.TestCase):
     def test_run(self):
         pass
 
+    def test_best_model_returned(self):
+        experiment = logreg.experiment
+        experiment.config.training.max_epochs = 4
+        _, module = experiment.train(experiment.config, 42)
+        _, val, __ = experiment.test_all(module, 1, 42)
+        df1 = experiment.results.df_run(1)
+        best = df1.val_metric.max()
+        self.assertEqual(round(best, 4), round(val, 4))
+
     def tearDown(self):
         if os.path.exists('temp/test_logreg'):
             shutil.rmtree('temp/test_logreg')

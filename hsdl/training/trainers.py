@@ -1,5 +1,6 @@
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
+from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
 from pytorch_lightning.loggers import LightningLoggerBase
 
 from hsdl import util
@@ -28,18 +29,8 @@ class HsdlTrainer(Trainer):
                     patience=config.stopping.patience,
                     mode=config.metric.criterion))
 
-        # self.stopping = stopping.get(config)
-        # self.stopped = False
-
-    # def on_train_batch_start(self, batch, batch_idx, dataloader_idx):
-    #     if self.stopped:
-    #         return -1
-    #     stop, reason = self.stopping(self.logger)
-    #     if stop:
-    #         tqdm.write(reason)
-    #         self.stopped = True
-    #         return -1
-    #
-    # def on_validation_batch_start(self, batch, batch_idx, dataloader_idx):
-    #     if self.stopped:
-    #         return -1
+        self.my_checkpoint_callback = ModelCheckpoint(
+            monitor='val_metric',
+            save_top_k=2,
+            mode=config.metric.criterion)
+        self.callbacks.append(self.my_checkpoint_callback)
