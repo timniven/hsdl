@@ -42,12 +42,15 @@ class Experiment:
             self.config.merge(best_params)
 
         # train and get results
-        for run_no in range(self.results.n_runs_completed + 1,
-                            self.config.n_runs + 1):
-            tqdm.write('Running final experiments...')
-            seed = util.new_random_seed()
-            trainer, module = self.train(self.config, seed, run_no)
-            self.test_all(module, run_no, seed)
+        tqdm.write('Running final experiments...')
+        remaining_runs = list(range(self.results.n_runs_completed + 1,
+                                    self.config.n_runs + 1))
+        with tqdm(total=len(remaining_runs)) as pbar:
+            for run_no in remaining_runs:
+                seed = util.new_random_seed()
+                trainer, module = self.train(self.config, seed, run_no)
+                self.test_all(module, run_no, seed)
+                pbar.update()
 
         # report results
         tqdm.write(self.results.summarize())
