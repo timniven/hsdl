@@ -12,7 +12,7 @@ def get_lightning_metric(config):
         return Fbeta(
             num_classes=config.metric.num_classes,
             beta=config.metric.beta,
-            multilabel=config.metric.multilabel)
+            multilabel=config.metric.multi_label)
     # TODO: handle more metrics
     else:
         raise ValueError(f'Unexpected metric: {config.metric.name}.')
