@@ -13,7 +13,7 @@ def get_lightning_metric(config):
         raise ValueError(f'Unexpected metric: {config.metric.name}.')
 
 
-class MultilingualDistilbert(LightningModule):
+class BaseModule(LightningModule):
 
     def __init__(self, config: ExperimentConfig):
         super().__init__()
