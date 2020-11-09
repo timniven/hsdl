@@ -1,4 +1,5 @@
 from pytorch_lightning import Trainer
+from pytorch_lightning.callbacks import GradientAccumulationScheduler
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
 from pytorch_lightning.loggers import LightningLoggerBase
@@ -34,3 +35,10 @@ class HsdlTrainer(Trainer):
             save_top_k=2,
             mode=config.metric.criterion)
         self.callbacks.append(self.my_checkpoint_callback)
+
+        if config.training.gradient_accumulation_steps:
+            scheduler = GradientAccumulationScheduler(
+                scheduling={config.training.gradient_accumulation_start:
+                                config.training.gradient_accumulation_steps}
+            )
+            self.callbacks.append(scheduler)
