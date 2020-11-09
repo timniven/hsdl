@@ -31,7 +31,7 @@ class BaseModule(LightningModule):
                  on_step=True,
                  on_epoch=True)
 
-    def log_val_step(self, logits, y):
+    def log_validation_step(self, logits, y):
         self.val_metric(logits, y)
         self.log('val_metric',
                  self.val_metric.compute(),
