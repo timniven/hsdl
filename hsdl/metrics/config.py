@@ -10,3 +10,9 @@ class MetricConfig(Config):
         if criterion not in ['min', 'max']:
             raise ValueError(f'Unexpected criterion: {criterion}.')
         self.criterion = criterion
+
+
+class MaxAccuracy(MetricConfig):
+
+    def __init__(self):
+        super().__init__('acc', 'max')
