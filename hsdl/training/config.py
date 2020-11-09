@@ -8,6 +8,7 @@ class TrainingConfig(Config):
                  max_epochs: int,
                  train_batch_size: int,
                  tune_batch_size: int,
+                 dropout: float = 0,
                  min_epochs: int = 1,
                  gradient_clip_val: float = 0.,
                  auto_scale_batch_size: bool = False,
@@ -15,8 +16,8 @@ class TrainingConfig(Config):
                  num_collate_workers: int = 4,
                  **kwargs):
         super().__init__(**kwargs)
-        # NOTE: this is a target, but account for memory limit, so use property
         self.train_batch_size = train_batch_size
+        self.dropout = dropout
         self.no_cuda = no_cuda
         self.max_epochs = max_epochs
         self.min_epochs = min_epochs
