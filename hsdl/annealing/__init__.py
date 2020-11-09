@@ -1,18 +1,18 @@
 from torch.optim import Optimizer, lr_scheduler
 
-from hsdl.annealing.config import AnnealingConfig
+from hsdl.config import ExperimentConfig
 
 
-def get(config: AnnealingConfig, optimizer: Optimizer, verbose: bool = False):
+def get(config: ExperimentConfig, optimizer: Optimizer, verbose: bool = True):
     """Get annealing algorithm from annealing config."""
-    if config.schedule == 'none':
+    if config.annealing.schedule == 'none':
         return None
-    elif config.schedule == 'plateau':
+    elif config.annealing.schedule == 'plateau':
         return lr_scheduler.ReduceLROnPlateau(
             optimizer=optimizer,
             mode='max',
-            factor=config.factor,
-            patience=config.patience,
+            factor=config.annealing.factor,
+            patience=config.annealing.patience,
             verbose=verbose)
     else:
-        raise ValueError(f'Unexpected lr_schedule: {config.schedule}')
+        raise ValueError(f'Unexpected lr_schedule: {config.annealing.schedule}')

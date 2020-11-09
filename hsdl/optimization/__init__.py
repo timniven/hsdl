@@ -2,24 +2,24 @@ from torch import optim
 import transformers
 from typing import List
 
-from .config import *
+from hsdl.config import ExperimentConfig
 
 
-def get(config: OptimizationConfig, model_parameters: List):
-    if config.name == 'adam':
+def get(config: ExperimentConfig, model_parameters: List):
+    if config.optimization.name == 'adam':
         return optim.Adam(
             params=model_parameters,
-            lr=config.lr,
-            betas=(config.beta1, config.beta2),
-            eps=config.eps,
-            weight_decay=config.weight_decay)
-    if config.name == 'adamw':
+            lr=config.optimization.lr,
+            betas=(config.optimization.beta1, config.optimization.beta2),
+            eps=config.optimization.eps,
+            weight_decay=config.optimization.weight_decay)
+    if config.optimization.name == 'adamw':
         return transformers.AdamW(
             params=model_parameters,
-            lr=config.lr,
-            betas=(config.beta1, config.beta2),
-            eps=config.eps,
-            weight_decay=config.weight_decay,
-            correct_bias=config.correct_bias)
+            lr=config.optimization.lr,
+            betas=(config.optimization.beta1, config.optimization.beta2),
+            eps=config.optimization.eps,
+            weight_decay=config.optimization.weight_decay,
+            correct_bias=config.optimization.correct_bias)
     else:
-        raise ValueError(f'Unexpected optimizer: {config.name}')
+        raise ValueError(f'Unexpected optimizer: {config.optimization.name}')
