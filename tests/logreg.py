@@ -120,7 +120,7 @@ class LogisticRegression(LightningModule):
         optimizer = optim.Adam(
             self.parameters(), lr=self.config.optimization.lr)
         if self.config.annealing:
-            annealer = annealing.get(self.config.annealing, optimizer, True)
+            annealer = annealing.get(self.config, optimizer, True)
             return {
                 'optimizer': optimizer,
                 'lr_scheduler': annealer,

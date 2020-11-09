@@ -2,10 +2,8 @@ from torch import optim
 import transformers
 from typing import List
 
-from hsdl.config import ExperimentConfig
 
-
-def get(config: ExperimentConfig, model_parameters: List):
+def get(config, model_parameters: List):
     if config.optimization.name == 'adam':
         return optim.Adam(
             params=model_parameters,

@@ -1,9 +1,7 @@
 from torch.optim import Optimizer, lr_scheduler
 
-from hsdl.config import ExperimentConfig
 
-
-def get(config: ExperimentConfig, optimizer: Optimizer, verbose: bool = True):
+def get(config, optimizer: Optimizer, verbose: bool = True):
     """Get annealing algorithm from annealing config."""
     if config.annealing.schedule == 'none':
         return None
