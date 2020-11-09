@@ -1,5 +1,5 @@
 from pytorch_lightning import LightningModule
-from pytorch_lightning.metrics import Accuracy
+from pytorch_lightning.metrics import Accuracy, Fbeta
 
 from hsdl import annealing, optimization
 from hsdl.config import ExperimentConfig
@@ -8,6 +8,11 @@ from hsdl.config import ExperimentConfig
 def get_lightning_metric(config):
     if config.metric.name == 'acc':
         return Accuracy()
+    elif config.metric.name == 'fbeta':
+        return Fbeta(
+            num_classes=config.metric.num_classes,
+            beta=config.metric.beta,
+            multilabel=config.metric.multilabel)
     # TODO: handle more metrics
     else:
         raise ValueError(f'Unexpected metric: {config.metric.name}.')
