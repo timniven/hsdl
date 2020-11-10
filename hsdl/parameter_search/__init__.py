@@ -219,3 +219,5 @@ class ParameterSearch:
         val_metric = self.experiment.test_val(module)
 
         self.results.report(ix, params, train_metric, val_metric)
+
+        del module
