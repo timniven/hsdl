@@ -4,7 +4,11 @@ from typing import Any, Dict, Union
 
 import pandas as pd
 
+from hsdl import util
 from hsdl.experiments.config import ExperimentConfig
+
+
+tqdm = util.get_tqdm()
 
 
 class ExperimentResults:
@@ -55,6 +59,10 @@ class ExperimentResults:
             return 0
         return int(df.run_no.max())
 
+    @property
+    def n_runs_reported(self):
+        return sum(1 for x in os.listdir(self.dir) if x.startswith('version'))
+
     def report_metric(self, run_no: int, seed: int, subset: str, metric: float):
         df = self.df_metrics()
         df = df.append({
@@ -65,6 +73,14 @@ class ExperimentResults:
             },
             ignore_index=True)
         df.to_csv(self.metrics_path, index=False)
+
+    def remove_run_checkpoints(self, run_no: int):
+        folder_path = os.path.join(self.dir, f'version_{run_no}', 'checkpoints')
+        files = os.listdir(folder_path)
+        for file in files:
+            file_path = os.path.join(folder_path, file)
+            os.remove(file_path)
+            tqdm.write(f'Deleted {file_path}')
 
     def save_best_params(self, params: Dict[str, Any]):
         with open(self.best_params_path, 'w+') as f:
