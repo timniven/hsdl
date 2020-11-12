@@ -1,21 +1,7 @@
 from pytorch_lightning import LightningModule
-from pytorch_lightning.metrics import Accuracy, Fbeta
 
-from hsdl import annealing, optimization
+from hsdl import annealing, metrics, optimization
 from hsdl.config import ExperimentConfig
-
-
-def get_lightning_metric(config):
-    if config.metric.name == 'acc':
-        return Accuracy()
-    elif config.metric.name == 'fbeta':
-        return Fbeta(
-            num_classes=config.metric.num_classes,
-            beta=config.metric.beta,
-            multilabel=config.metric.multi_label)
-    # TODO: handle more metrics
-    else:
-        raise ValueError(f'Unexpected metric: {config.metric.name}.')
 
 
 class BaseModule(LightningModule):
@@ -23,9 +9,9 @@ class BaseModule(LightningModule):
     def __init__(self, config: ExperimentConfig):
         super().__init__()
         self.config = config
-        self.train_metric = get_lightning_metric(config)
-        self.val_metric = get_lightning_metric(config)
-        self.test_metric = get_lightning_metric(config)
+        self.train_metric = metrics.get_lightning_metric(config)
+        self.val_metric = metrics.get_lightning_metric(config)
+        self.test_metric = metrics.get_lightning_metric(config)
         # idea is overriding class defines the model in the constructor
 
     def log_training_step(self, logits, y, loss):

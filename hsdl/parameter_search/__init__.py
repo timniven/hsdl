@@ -116,8 +116,9 @@ class SearchResults:
         grouping = ['ix']
         grouping += self.space.attrs
         means = self.results.groupby(grouping).mean().reset_index()
-        metric = metrics.get(self.experiment.config.metric)
-        best_metric = metric.best(means.val.values)
+        best_metric = metrics.best(
+            scores=means.val.values,
+            criterion=self.experiment.config.metric.criterion)
         best_params = means[means.val == best_metric]
         best_params = best_params[grouping]
         return best_metric, best_params.to_dict('records')

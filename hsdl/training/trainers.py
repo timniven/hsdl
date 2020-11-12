@@ -1,10 +1,9 @@
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import GradientAccumulationScheduler
-from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
 from pytorch_lightning.loggers import LightningLoggerBase
 
-from hsdl import util
+from hsdl import stopping, util
 from hsdl.experiments.config import ExperimentConfig
 
 
@@ -23,12 +22,9 @@ class HsdlTrainer(Trainer):
             gradient_clip_val=config.training.gradient_clip_val)
         self.config = config
 
-        if config.stopping and config.stopping.strategy == 'no_val_improvement':
-            self.callbacks.append(
-                EarlyStopping(
-                    monitor='val_metric',
-                    patience=config.stopping.patience,
-                    mode=config.metric.criterion))
+        if config.stopping:
+            early_stopping = stopping.get(config)
+            self.callbacks.append(early_stopping)
 
         self.my_checkpoint_callback = ModelCheckpoint(
             monitor='val_metric',

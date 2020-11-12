@@ -27,8 +27,8 @@ class TestExperiment(unittest.TestCase):
         trainer, module = experiment.train(experiment.config, 42)
         train, val, test = experiment.test_all(module, 1, 42)
         self.assertEqual(0.70, round(train, 2))
-        self.assertEqual(0.66, round(val, 2))
-        self.assertEqual(0.64, round(test, 2))
+        self.assertEqual(0.80, round(val, 2))
+        self.assertEqual(0.68, round(test, 2))
 
     def test_run(self):
         pass
