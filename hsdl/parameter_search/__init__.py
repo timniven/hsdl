@@ -221,7 +221,8 @@ class ParameterSearch:
 
         self.results.report(ix, params, train_metric, val_metric)
 
-        del module  # TODO: we have memory leakage here, but this not the fix
+        # for memory leak issue, seems to work now
+        del module
 
         # remove the checkpoints after a grid search
         self.experiment.results.remove_run_checkpoints(

@@ -83,15 +83,19 @@ class Experiment:
         # NOTE: couldn't get trainer.test to work for me, so doing it manually
         # TODO: this is not flexible in any way to the specifics of data & model
         train_metric = self.test_train(module)
-        val_metric = self.test_val(module)
-        test_metric = self.test_test(module)
-
         self.results.report_metric(
             run_no=run_no, seed=seed, subset='train', metric=train_metric)
+
+        val_metric = self.test_val(module)
         self.results.report_metric(
             run_no=run_no, seed=seed, subset='val', metric=val_metric)
-        self.results.report_metric(
-            run_no=run_no, seed=seed, subset='test', metric=test_metric)
+
+        if self.data.test_dataloader():
+            test_metric = self.test_test(module)
+            self.results.report_metric(
+                run_no=run_no, seed=seed, subset='test', metric=test_metric)
+        else:
+            test_metric = 0.
 
         # this return is for testing
         return train_metric, val_metric, test_metric
