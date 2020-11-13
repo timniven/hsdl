@@ -47,6 +47,7 @@ class Experiment:
                                     self.config.n_runs + 1))
         with tqdm(total=len(remaining_runs)) as pbar:
             for run_no in remaining_runs:
+                pbar.set_description(f'Run # {run_no} of {self.config.n_runs}')
                 seed = util.new_random_seed()
 
                 trainer, module = self.train(self.config, seed, run_no)
