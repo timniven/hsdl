@@ -48,8 +48,15 @@ class Experiment:
         with tqdm(total=len(remaining_runs)) as pbar:
             for run_no in remaining_runs:
                 seed = util.new_random_seed()
+
                 trainer, module = self.train(self.config, seed, run_no)
+
                 self.test_all(module, run_no, seed)
+
+                # try and prevent memory leak
+                del module
+                del trainer
+
                 pbar.update()
 
         # report results
