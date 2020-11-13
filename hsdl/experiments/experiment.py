@@ -5,7 +5,7 @@ from pytorch_lightning import LightningDataModule, LightningModule, \
     seed_everything, Trainer
 from pytorch_lightning.loggers import TestTubeLogger
 
-from hsdl import util
+from hsdl import metrics, util
 from hsdl.experiments.config import ExperimentConfig as Config
 from hsdl.experiments.results import ExperimentResults
 from hsdl.parameter_search import ParameterSearch, SearchSpace
@@ -31,6 +31,19 @@ class Experiment:
         self.results = ExperimentResults(config)
         if not os.path.exists(config.results_dir):
             os.mkdir(config.results_dir)
+
+    def best_module(self, subset: str = 'test'):
+        df_metrics = self.results.df_metrics()
+        metric_name = self.config.metric.name
+        eval_metrics = df_metrics[df_metrics.subset == subset]
+        eval_metrics = eval_metrics[metric_name].values
+        best_metric = metrics.best(eval_metrics, self.config.metric.criterion)
+        best_run_no = df_metrics[df_metrics[metric_name] == best_metric].run_no
+        df_run = self.results.df_run(best_run_no)
+        best_epoch = df_run[df_run[f'{subset}_metric'] == best_metric].epoch
+        checkpoint_path = self.results.checkpoint_path(best_run_no, best_epoch)
+        module = self.module_constructor.load_from_checkpoint(checkpoint_path)
+        return module
 
     def run(self):
         # do parameter search if required

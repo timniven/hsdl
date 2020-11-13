@@ -29,6 +29,12 @@ class ExperimentResults:
     def best_params_path(self):
         return os.path.join(self.dir, 'best_params.json')
 
+    def checkpoint_path(self, run_no: int, epoch: int):
+        return os.path.join(self.config.results_dir,
+                            f'version_{run_no}',
+                            'checkpoints',
+                            f'epoch={epoch}-v0.ckpt')
+
     def df_metrics(self) -> pd.DataFrame:
         if os.path.exists(self.metrics_path):
             return pd.read_csv(self.metrics_path)
