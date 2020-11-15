@@ -42,7 +42,9 @@ class Experiment:
         df_run = self.results.df_run(best_run_no)
         best_epoch = df_run[df_run[f'{subset}_metric'] == best_metric].epoch
         checkpoint_path = self.results.checkpoint_path(best_run_no, best_epoch)
-        module = self.module_constructor.load_from_checkpoint(checkpoint_path)
+        module = self.module_constructor.load_from_checkpoint(
+            checkpoint_path=checkpoint_path,
+            config=self.config)
         return module
 
     def run(self):

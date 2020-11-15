@@ -3,6 +3,7 @@ import itertools
 import json
 import os
 import random
+import shutil
 from typing import Dict, List
 
 import numpy as np
@@ -199,6 +200,8 @@ class ParameterSearch:
         with open(self.best_params_path, 'w') as f:
             f.write(json.dumps(best_params))
 
+        self.remove_grid_results_folders()
+
         return best_params
 
     @property
@@ -227,3 +230,9 @@ class ParameterSearch:
         # remove the checkpoints after a grid search
         self.experiment.results.remove_run_checkpoints(
             self.experiment.results.n_runs_reported - 1)
+
+    def remove_grid_results_folders(self):
+        folders = [x for x in os.listdir(self.experiment.results.dir)
+                   if x.startswith('version')]
+        for folder in folders:
+            shutil.rmtree(folder)
