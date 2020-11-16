@@ -13,10 +13,10 @@ class TrainingConfig(Config):
                  gradient_accumulation_steps: Optional[int] = None,
                  gradient_accumulation_start: Optional[int] = None,
                  dropout: float = 0,
+                 n_gpus: int = 1,
                  min_epochs: int = 1,
                  gradient_clip_val: float = 0.,
                  auto_scale_batch_size: bool = False,
-                 no_cuda=False,
                  num_collate_workers: int = 4,
                  **kwargs):
         super().__init__(**kwargs)
@@ -25,7 +25,7 @@ class TrainingConfig(Config):
         self.gradient_accumulation_steps = gradient_accumulation_steps
         self.gradient_accumulation_start = gradient_accumulation_start
         self.dropout = dropout
-        self.no_cuda = no_cuda
+        self.n_gpus = n_gpus
         self.max_epochs = max_epochs
         self.min_epochs = min_epochs
         self.gradient_clip_val = gradient_clip_val

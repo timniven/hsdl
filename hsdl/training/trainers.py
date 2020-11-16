@@ -18,7 +18,7 @@ class HsdlTrainer(Trainer):
             logger=logger,
             max_epochs=config.training.max_epochs,
             min_epochs=config.training.min_epochs,
-            gpus=1,
+            gpus=config.training.n_gpus,
             gradient_clip_val=config.training.gradient_clip_val)
         self.config = config
 
@@ -27,9 +27,9 @@ class HsdlTrainer(Trainer):
             self.callbacks.append(early_stopping)
 
         self.my_checkpoint_callback = ModelCheckpoint(
-            monitor='val_metric',
+            monitor='val_loss',
             save_top_k=2,
-            mode=config.metric.criterion)
+            mode='min')
         self.callbacks.append(self.my_checkpoint_callback)
 
         if config.training.gradient_accumulation_steps:

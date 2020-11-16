@@ -117,12 +117,10 @@ class SearchResults:
         grouping = ['ix']
         grouping += self.space.attrs
         means = self.results.groupby(grouping).mean().reset_index()
-        best_metric = metrics.best(
-            scores=means.val.values,
-            criterion=self.experiment.config.metric.criterion)
-        best_params = means[means.val == best_metric]
+        best_loss = means.val_loss.min()
+        best_params = means[means.val_loss == best_loss]
         best_params = best_params[grouping]
-        return best_metric, best_params.to_dict('records')
+        return best_loss, best_params.to_dict('records')
 
     @property
     def file_path(self):
@@ -142,15 +140,14 @@ class SearchResults:
     def new_results(self):
         columns = ['ix']
         columns += self.space.attrs
-        columns += ['train', 'val']
+        columns += ['val_loss']
         return pd.DataFrame(columns=columns, data=[])
 
-    def report(self, ix: int, params: Dict, train: float, val: float):
+    def report(self, ix: int, params: Dict, val_loss: float):
         self.results = self.results.append({
                 'ix': ix,
                 **params,
-                'train': train,
-                'val': val,
+                'val_loss': val_loss,
             },
             ignore_index=True)
         self.save()
@@ -161,11 +158,15 @@ class SearchResults:
 
 class ParameterSearch:
 
-    def __init__(self, experiment, k_tie_break: int = 1):
+    def __init__(self,
+                 experiment,
+                 k_tie_break: int = 1,
+                 max_tie_breaks: int = 1):
         self.experiment = experiment
         self.search_space = experiment.search_space
         self.results = SearchResults(experiment)
         self.k_tie_break = k_tie_break
+        self.max_tie_breaks = max_tie_breaks
 
     def __call__(self):
         # search over the space
@@ -180,7 +181,9 @@ class ParameterSearch:
         best_metric, best_params = self.results.best()
 
         # tie break if needed
+        tries = 0
         while len(best_params) > 1:
+            tries += 1
             tqdm.write('Found %s combinations with best performance of %s.'
                        % (len(best_params), best_metric))
             tqdm.write('Performing tie break...')
@@ -191,6 +194,8 @@ class ParameterSearch:
                         self.evaluate(params['ix'], seed)
                         pbar.update()
             best_metric, best_params = self.results.best()
+            if tries >= self.max_tie_breaks and len(best_params) > 1:
+                best_params = [random.choice(best_params)]
 
         best_params = best_params[0]
         best_params.pop('ix')
@@ -218,14 +223,11 @@ class ParameterSearch:
                    % (ix, len(self.search_space)))
         util.aligned_print(params, indent=1)
 
-        _, module = self.experiment.train(config, seed)
-        train_metric = self.experiment.test_train(module)
-        val_metric = self.experiment.test_val(module)
+        _, __ = self.experiment.train(config, seed)
+        df_run = self.experiment.results.df_run(0)  # always zero with deletes
+        best_loss = df_run.val_loss.min()
 
-        self.results.report(ix, params, train_metric, val_metric)
-
-        # for memory leak issue, seems to work now
-        del module
+        self.results.report(ix, params, best_loss)
 
         # remove the checkpoints after a grid search
         self.experiment.results.remove_run_checkpoints(
@@ -235,4 +237,6 @@ class ParameterSearch:
         folders = [x for x in os.listdir(self.experiment.results.dir)
                    if x.startswith('version')]
         for folder in folders:
-            shutil.rmtree(folder)
+            path = os.path.join(self.experiment.results.dir, folder)
+            shutil.rmtree(path)
+            tqdm.write(f'Removed {path}.')

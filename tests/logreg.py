@@ -4,18 +4,17 @@ import shutil
 from typing import List
 
 import numpy as np
-from pytorch_lightning import LightningModule, LightningDataModule
-from pytorch_lightning.metrics import Accuracy
+from pytorch_lightning import LightningDataModule
 from sklearn.datasets import load_iris
-from torch import nn, optim, Tensor
+from torch import nn, Tensor
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset
 
-from hsdl import annealing
 from hsdl.config.base import Config
 from hsdl.annealing.config import ReduceLROnPlateauConfig
 from hsdl.experiments import Experiment, ExperimentConfig
 from hsdl.metrics.config import MetricConfig
+from hsdl.modules import BaseModule
 from hsdl.optimization.config import AdamConfig
 from hsdl.parameter_search import SearchSpace, SearchSubSpace, GridDimension
 from hsdl.stopping.config import NoValImprovementConfig
@@ -78,56 +77,36 @@ class LogisticRegressionConfig(Config):
     pass
 
 
-class LogisticRegression(LightningModule):
+class LogisticRegression(BaseModule):
 
     def __init__(self, config: ExperimentConfig):
-        super().__init__()
-        self.config = config
+        super().__init__(config)
         self.linear = nn.Linear(4, 3)
-        self.train_metric = Accuracy()
-        self.val_metric = Accuracy()
-        self.test_metric = Accuracy()
 
-    def forward(self, X: Tensor) -> Tensor:
-        logits = self.linear(X.float())
+    def forward(self, x: Tensor) -> Tensor:
+        logits = self.linear(x.float())
         return logits
 
-    def training_step(self, batch: List[Tensor], batch_ix: int):
-        X, y = batch
-        logits = self.linear(X.float())
-        loss = F.cross_entropy(logits, y)
-        self.log('train_loss', loss)
-        self.train_metric(logits, y)
-        self.log('train_metric', self.train_metric.compute(), on_step=True,
-                 on_epoch=True)
+    def loss(self, logits: Tensor, y: Tensor) -> Tensor:
+        return F.cross_entropy(logits, y)
+
+    def training_step(self, batch: List[Tensor], batch_ix: int) -> Tensor:
+        x, y = batch
+        logits = self.forward(x)
+        loss = self.loss(logits, y)
+        self.log_training_step(logits, y, loss)
         return loss
 
     def validation_step(self, batch: List[Tensor], batch_ix: int):
-        X, y = batch
-        logits = self.linear(X.float())
-        self.val_metric(logits, y)
-        self.log('val_metric', self.val_metric.compute(), on_epoch=True,
-                 on_step=False)
+        x, y = batch
+        logits = self.forward(x)
+        loss = self.loss(logits, y)
+        self.log_validation_step(logits, y, loss)
 
     def test_step(self, batch: List[Tensor], batch_ix: int):
-        X, y = batch
-        logits = self.linear(X.float())
-        self.test_metric(logits, y)
-        self.log('test_metric', self.val_metric.compute(), on_epoch=True,
-                 on_step=False)
-
-    def configure_optimizers(self):
-        optimizer = optim.Adam(
-            self.parameters(), lr=self.config.optimization.lr)
-        if self.config.annealing:
-            annealer = annealing.get(self.config, optimizer, True)
-            return {
-                'optimizer': optimizer,
-                'lr_scheduler': annealer,
-                'monitor': 'val_metric',
-            }
-        else:
-            return optimizer
+        x, y = batch
+        logits = self.forward(x)
+        self.log_test_step(logits, y)
 
 
 config = ExperimentConfig(
@@ -139,12 +118,15 @@ config = ExperimentConfig(
     training=TrainingConfig(
         max_epochs=2,
         train_batch_size=16,
+        n_gpus=0,
         tune_batch_size=16),
     annealing=ReduceLROnPlateauConfig(
         factor=0.2,
         patience=2),
     optimization=AdamConfig(lr=0.1),
     stopping=NoValImprovementConfig(
+        monitor='val_loss',
+        criterion='min',
         patience=2,
         k=2),
     results_dir='temp',

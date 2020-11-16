@@ -21,7 +21,7 @@ class TestParameterSearch(unittest.TestCase):
             _ = search()
         except Exception as e:
             error = True
-            # raise e
+            raise e
         self.assertFalse(error)
 
     def test_evaluate(self):
@@ -31,8 +31,7 @@ class TestParameterSearch(unittest.TestCase):
         result = search.results.results.iloc[0]
         self.assertEqual(1.0, result['ix'])
         self.assertEqual(0.3, result['optimization.lr'])
-        self.assertEqual(0.70, round(result.train, 2))
-        self.assertEqual(0.80, round(result.val, 2))
+        self.assertEqual(0.41, round(result.val_loss, 2))
 
     def tearDown(self):
         if os.path.exists(self.results_dir):

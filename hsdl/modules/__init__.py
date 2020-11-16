@@ -1,4 +1,5 @@
 from pytorch_lightning import LightningModule
+from torch import Tensor
 
 from hsdl import annealing, metrics, optimization
 from hsdl.config import ExperimentConfig
@@ -14,7 +15,7 @@ class BaseModule(LightningModule):
         self.test_metric = metrics.get_lightning_metric(config)
         # idea is overriding class defines the model in the constructor
 
-    def log_training_step(self, logits, y, loss):
+    def log_training_step(self, logits: Tensor, y: Tensor, loss: Tensor):
         self.log('train_loss', loss)
         self.train_metric(logits, y)
         self.log('train_metric',
@@ -22,14 +23,15 @@ class BaseModule(LightningModule):
                  on_step=True,
                  on_epoch=True)
 
-    def log_validation_step(self, logits, y):
+    def log_validation_step(self, logits: Tensor, y: Tensor, loss: Tensor):
+        self.log('val_loss', loss, on_epoch=True, on_step=False)
         self.val_metric(logits, y)
         self.log('val_metric',
                  self.val_metric.compute(),
                  on_epoch=True,
                  on_step=False)
 
-    def log_test_step(self, logits, y):
+    def log_test_step(self, logits: Tensor, y: Tensor):
         self.test_metric(logits, y)
         self.log('test_metric',
                  self.val_metric.compute(),

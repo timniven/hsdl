@@ -8,9 +8,9 @@ def get(config: ExperimentConfig):
         raise ValueError('No stopping configured.')
     elif config.stopping.strategy == 'no_val_improvement':
         return EarlyStopping(
-            monitor='val_metric',
+            monitor=config.stopping.monitor,
             patience=config.stopping.patience,
-            mode=config.metric.criterion)
+            mode=config.stopping.criterion)
     else:
         raise ValueError(f'Unexpected early stopping strategy: '
                          f'{config.stopping.strategy}')

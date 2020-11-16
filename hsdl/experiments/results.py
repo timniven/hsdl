@@ -31,6 +31,7 @@ class ExperimentResults:
 
     def checkpoint_path(self, run_no: int, epoch: int):
         return os.path.join(self.config.results_dir,
+                            self.config.experiment_name,
                             f'version_{run_no}',
                             'checkpoints',
                             f'epoch={epoch}-v0.ckpt')
@@ -44,11 +45,11 @@ class ExperimentResults:
                 data=[])
 
     def df_run(self, run_no: int) -> Union[pd.DataFrame, None]:
-        if run_no < 1 or run_no > self.n_runs_completed:
+        if run_no > self.n_runs_completed:
             raise ValueError(f'Invalid run number: {run_no}. '
                              f'This experiment has {self.n_runs_completed} '
                              f'completed runs.')
-        run_folder = os.path.join(self.dir, f'version_{run_no-1}')
+        run_folder = os.path.join(self.dir, f'version_{run_no}')
         if not os.path.exists(run_folder):
             raise ValueError(f'Missing folder: {run_folder}')
         run_path = os.path.join(run_folder, 'metrics.csv')
