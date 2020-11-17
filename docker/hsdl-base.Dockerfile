@@ -1,3 +1,4 @@
+# if I remember correctly, 10.1 needed for easy install of tensorflow
 FROM nvidia/cuda:10.1-base-ubuntu18.04
 
 RUN apt update
@@ -22,3 +23,10 @@ COPY download_models.py /temp/download_models.py
 RUN python3.8 /temp/download_models.py
 
 RUN rm -r /temp
+
+# install spacy and download models we are using
+RUN python3.8 -m pip install -U spacy[cuda101]
+RUN python3.8 -m pip install -U spacy-lookups-data
+RUN python3.8 -m spacy download zh_core_web_sm
+RUN python3.8 -m spacy download en_core_web_sm
+RUN python3.8 -m spacy download jp_core_web_sm
