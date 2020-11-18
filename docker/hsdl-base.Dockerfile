@@ -27,6 +27,6 @@ RUN rm -r /temp
 # install spacy and download models we are using
 RUN python3.8 -m pip install -U spacy[cuda101]
 RUN python3.8 -m pip install -U spacy-lookups-data
-RUN python3.8 -m spacy download zh_core_web_sm
-RUN python3.8 -m spacy download en_core_web_sm
-RUN python3.8 -m spacy download jp_core_web_sm
+RUN python3.8 -m spacy download ja_core_news_lg
+RUN python3.8 -m spacy download zh_core_web_lg
+RUN python3.8 -m spacy download en_core_web_lg
