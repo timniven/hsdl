@@ -1,4 +1,3 @@
 FROM timniven/hsdl:base
 
-COPY . /hsdl
-WORKDIR /hsdl
+RUN python3.8 -m pip install git+https://github.com/timniven/hsdl.git

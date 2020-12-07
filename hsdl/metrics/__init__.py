@@ -5,6 +5,8 @@ from .config import MetricConfig
 
 
 def get_lightning_metric(config):
+    if config.metric.name is None:
+        return None
     if config.metric.name == 'acc':
         return pl_metrics.Accuracy()
     elif config.metric.name == 'fbeta':
