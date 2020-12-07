@@ -78,7 +78,9 @@ class Experiment:
 
                 trainer, module = self.train(self.config, seed, run_no)
 
-                self.test_all(module, run_no, seed)
+                if self.config.metric is not None \
+                        and self.config.metric.name is not None:
+                    self.test_all(module, run_no, seed)
 
                 # try and prevent memory leak
                 del module
