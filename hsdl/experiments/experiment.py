@@ -33,21 +33,27 @@ class Experiment:
         if not os.path.exists(config.results_dir):
             os.mkdir(config.results_dir)
 
-    def best_module(self, subset: str = 'test'):
-        df_metrics = self.results.df_metrics()
-        metric_name = self.config.metric.name
-        eval_metrics = df_metrics[df_metrics.subset == subset]
-        eval_metrics = eval_metrics[metric_name].values
-        best_metric = metrics.best(eval_metrics, self.config.metric.criterion)
-        best_run_no = df_metrics[
-            df_metrics[metric_name] == best_metric].iloc[0].run_no
+    def best_module(self, subset: str = 'test', run_no: Optional[int] = None):
+        if not run_no:
+            df_metrics = self.results.df_metrics()
+            metric_name = self.config.metric.name
+            eval_metrics = df_metrics[df_metrics.subset == subset]
+            eval_metrics = eval_metrics[metric_name].values
+            best_metric = metrics.best(eval_metrics, self.config.metric.criterion)
+            best_run_no = df_metrics[
+                df_metrics[metric_name] == best_metric].iloc[0].run_no
+        else:
+            best_run_no = run_no
+
         df_run = self.results.df_run(best_run_no)
-        best_run_metric = df_run.val_metric.max()
+        best_run_metric = df_run.val_loss.min()
         best_epoch = df_run[df_run.val_metric == best_run_metric].iloc[0].epoch
+
         checkpoint_path = self.results.checkpoint_path(best_run_no, best_epoch)
         module = self.module_constructor.load_from_checkpoint(
             checkpoint_path=checkpoint_path,
             config=self.config)
+
         return module
 
     def clean_run_folder(self, run_no: int) -> None:
