@@ -166,6 +166,8 @@ class Experiment:
 
     @staticmethod
     def validate_search_space(config, search_space):
+        if search_space is None:
+            return
         error = False
         for attr in search_space.attrs:
             if attr not in config:
