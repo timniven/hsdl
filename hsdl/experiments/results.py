@@ -89,6 +89,9 @@ class ExperimentResults:
             os.remove(file_path)
             tqdm.write(f'Deleted {file_path}')
 
+    def run_path(self, run_no: int):
+        return os.path.join(self.dir, f'version_{run_no}')
+
     def save_best_params(self, params: Dict[str, Any]):
         with open(self.best_params_path, 'w+') as f:
             f.write(json.dumps(params))

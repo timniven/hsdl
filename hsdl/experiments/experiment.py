@@ -1,4 +1,5 @@
 import os
+import shutil
 from typing import Callable, Optional, Tuple
 
 from pytorch_lightning import LightningDataModule, LightningModule, \
@@ -49,6 +50,11 @@ class Experiment:
             config=self.config)
         return module
 
+    def clean_run_folder(self, run_no: int) -> None:
+        run_path = self.results.run_path(run_no)
+        if os.path.exists(run_path):
+            shutil.rmtree(run_path)
+
     def run(self):
         # do parameter search if required
         if self.search_space:
@@ -65,6 +71,9 @@ class Experiment:
         with tqdm(total=len(remaining_runs)) as pbar:
             for run_no in remaining_runs:
                 pbar.set_description(f'Run # {run_no} of {self.config.n_runs}')
+
+                self.clean_run_folder(run_no)
+
                 seed = util.new_random_seed()
 
                 trainer, module = self.train(self.config, seed, run_no)
