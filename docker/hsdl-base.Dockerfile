@@ -1,6 +1,8 @@
 # if I remember correctly, 10.1 needed for easy install of tensorflow
 FROM nvidia/cuda:10.1-base-ubuntu18.04
 
+COPY temp/ckip /ckip
+
 RUN apt update
 RUN apt -y --no-install-recommends install \
         git \

@@ -3,7 +3,7 @@
 # https://github.com/berkmancenter/mediacloud/blob/master/apps/common/.dockerignore
 #
 
-temp/
+#temp/
 *$py.class
 *.cover
 *.DS_Store
