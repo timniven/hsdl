@@ -10,9 +10,9 @@ class BaseModule(LightningModule):
     def __init__(self, config: ExperimentConfig):
         super().__init__()
         self.config = config
-        self.train_metric = metrics.get_lightning_metric(config)
-        self.val_metric = metrics.get_lightning_metric(config)
-        self.test_metric = metrics.get_lightning_metric(config)
+        self.train_metric = metrics.get_lightning_metric(config, self)
+        self.val_metric = metrics.get_lightning_metric(config, self)
+        self.test_metric = metrics.get_lightning_metric(config, self)
         # idea is overriding class defines the model in the constructor
 
     def log_training_step(self, logits: Tensor, y: Tensor, loss: Tensor):

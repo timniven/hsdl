@@ -25,3 +25,12 @@ class MaxFBeta(MetricConfig):
         self.beta = beta
         self.num_classes = num_classes
         self.multi_label = multi_label
+
+
+class Loss(MetricConfig):
+
+    def __init__(self, criterion: str):
+        super().__init__(
+            name='loss',
+            criterion=criterion)
+
