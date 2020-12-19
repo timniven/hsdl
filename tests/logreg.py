@@ -63,13 +63,13 @@ class IrisData(LightningDataModule):
         self.val = IrisDataset(X[50:100, :], y[50:100])
         self.test = IrisDataset(X[100:150, :], y[100:150])
 
-    def train_dataloader(self) -> DataLoader:
+    def train_dataloader(self, **kwargs) -> DataLoader:
         return DataLoader(self.train, batch_size=16, num_workers=4)
 
-    def val_dataloader(self) -> DataLoader:
+    def val_dataloader(self, **kwargs) -> DataLoader:
         return DataLoader(self.val, batch_size=16, num_workers=4)
 
-    def test_dataloader(self) -> DataLoader:
+    def test_dataloader(self, **kwargs) -> DataLoader:
         return DataLoader(self.test, batch_size=16, num_workers=4)
 
 

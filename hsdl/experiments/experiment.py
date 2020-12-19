@@ -113,8 +113,8 @@ class Experiment:
         trainer = get_trainer(config=config,
                               logger=logger,
                               debug=debug)
-        train_dataloader = self.data.train_dataloader()
-        val_dataloader = self.data.val_dataloader()
+        train_dataloader = self.data.train_dataloader(config=config)
+        val_dataloader = self.data.val_dataloader(config=config)
         trainer.fit(module, train_dataloader, val_dataloader)
         module = self.module_constructor.load_from_checkpoint(
             checkpoint_path=trainer.my_checkpoint_callback.best_model_path,
