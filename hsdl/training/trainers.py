@@ -27,9 +27,9 @@ class HsdlTrainer(Trainer):
             self.callbacks.append(early_stopping)
 
         self.my_checkpoint_callback = ModelCheckpoint(
-            monitor='val_loss',
+            monitor=config.training.checkpoint_monitor,
             save_top_k=2,
-            mode='min')
+            mode=config.training.checkpoint_mode)
         self.callbacks.append(self.my_checkpoint_callback)
 
         if config.training.gradient_accumulation_steps:

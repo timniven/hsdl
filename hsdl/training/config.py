@@ -18,6 +18,8 @@ class TrainingConfig(Config):
                  gradient_clip_val: float = 0.,
                  auto_scale_batch_size: bool = False,
                  num_collate_workers: int = 4,
+                 checkpoint_monitor: str = 'val_loss',
+                 checkpoint_mode: str = 'min',
                  **kwargs):
         super().__init__(**kwargs)
         self.train_batch_size = train_batch_size
@@ -32,3 +34,5 @@ class TrainingConfig(Config):
         self.num_collate_workers = num_collate_workers
         self.auto_scale_batch_size = 'binsearch' \
             if auto_scale_batch_size else None
+        self.checkpoint_monitor = checkpoint_monitor
+        self.checkpoint_mode = checkpoint_mode
