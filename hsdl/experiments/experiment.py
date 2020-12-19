@@ -147,7 +147,7 @@ class Experiment:
         tqdm.write('Evaluating on train...')
         train = self.data.train_dataloader()
         with tqdm(total=len(train)) as pbar:
-            for batch in self.data.train_dataloader():
+            for batch in self.data.train_dataloader(self.config):
                 x = batch[0]
                 y = batch[1]
                 preds = module(x)
@@ -160,7 +160,7 @@ class Experiment:
         tqdm.write('Evaluating on val...')
         val = self.data.val_dataloader()
         with tqdm(total=len(val)) as pbar:
-            for batch in self.data.val_dataloader():
+            for batch in self.data.val_dataloader(self.config):
                 x = batch[0]
                 y = batch[1]
                 preds = module(x)
@@ -173,7 +173,7 @@ class Experiment:
         tqdm.write('Evaluating on test...')
         test = self.data.test_dataloader()
         with tqdm(total=len(test)) as pbar:
-            for batch in self.data.test_dataloader():
+            for batch in self.data.test_dataloader(self.config):
                 x = batch[0]
                 y = batch[1]
                 preds = module(x)
