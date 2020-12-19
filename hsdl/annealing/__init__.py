@@ -8,7 +8,7 @@ def get(config, optimizer: Optimizer, verbose: bool = True):
     elif config.annealing.schedule == 'plateau':
         return lr_scheduler.ReduceLROnPlateau(
             optimizer=optimizer,
-            mode='max',
+            mode=config.annealing.mode,
             factor=config.annealing.factor,
             patience=config.annealing.patience,
             verbose=verbose)

@@ -44,11 +44,11 @@ class BaseModule(LightningModule):
     def configure_optimizers(self):
         optimizer = optimization.get(self.config, self.parameters())
         if self.config.annealing:
-            annealer = annealing.get(self.config, optimizer, True)
+            annealer = annealing.get(self.config, optimizer, verbose=True)
             return {
                 'optimizer': optimizer,
                 'lr_scheduler': annealer,
-                'monitor': 'val_metric',
+                'monitor': self.config.annealing.monitor,
             }
         else:
             return optimizer

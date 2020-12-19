@@ -122,7 +122,9 @@ config = ExperimentConfig(
         tune_batch_size=16),
     annealing=ReduceLROnPlateauConfig(
         factor=0.2,
-        patience=2),
+        patience=2,
+        monitor='val_loss',
+        mode='min'),
     optimization=AdamConfig(lr=0.1),
     stopping=NoValImprovementConfig(
         monitor='val_loss',

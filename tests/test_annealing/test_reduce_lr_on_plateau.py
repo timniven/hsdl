@@ -15,7 +15,9 @@ class TestReduceLROnPlateau(unittest.TestCase):
         experiment.config.training.max_epochs = 20
         experiment.config.annealing = ReduceLROnPlateauConfig(
             factor=0.2,
-            patience=3)
+            patience=3,
+            monitor='val_loss',
+            mode='min')
         experiment.config.stopping = None
         experiment.run()
         # NOTE: this also tests that the logging is occurring
