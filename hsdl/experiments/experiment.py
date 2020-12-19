@@ -145,9 +145,9 @@ class Experiment:
     def test_train(self, module: LightningModule) -> float:
         module.train_metric.reset()
         tqdm.write('Evaluating on train...')
-        train = self.data.train_dataloader()
+        train = self.data.train_dataloader(self.config)
         with tqdm(total=len(train)) as pbar:
-            for batch in self.data.train_dataloader(self.config):
+            for batch in train:
                 x = batch[0]
                 y = batch[1]
                 preds = module(x)
@@ -158,9 +158,9 @@ class Experiment:
     def test_val(self, module: LightningModule) -> float:
         module.val_metric.reset()
         tqdm.write('Evaluating on val...')
-        val = self.data.val_dataloader()
+        val = self.data.val_dataloader(self.config)
         with tqdm(total=len(val)) as pbar:
-            for batch in self.data.val_dataloader(self.config):
+            for batch in val:
                 x = batch[0]
                 y = batch[1]
                 preds = module(x)
@@ -171,9 +171,9 @@ class Experiment:
     def test_test(self, module: LightningModule) -> float:
         module.test_metric.reset()
         tqdm.write('Evaluating on test...')
-        test = self.data.test_dataloader()
+        test = self.data.test_dataloader(self.config)
         with tqdm(total=len(test)) as pbar:
-            for batch in self.data.test_dataloader(self.config):
+            for batch in test:
                 x = batch[0]
                 y = batch[1]
                 preds = module(x)
