@@ -70,4 +70,4 @@ class Loss(Metric):
     def update(self, logits, y):
         loss = self.loss_fn(logits, y)
         self.cum_loss += loss
-        self.total += logits.numel()
+        self.total += 1  # assume loss is already meaned
