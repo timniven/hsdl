@@ -30,11 +30,15 @@ class ExperimentResults:
         return os.path.join(self.dir, 'best_params.json')
 
     def checkpoint_path(self, run_no: int, epoch: int):
-        return os.path.join(self.config.results_dir,
-                            self.config.experiment_name,
-                            f'version_{run_no}',
-                            'checkpoints',
-                            f'epoch={epoch}-v0.ckpt')
+        checkpoints_folder = os.path.join(
+            self.config.results_dir,
+            self.config.experiment_name,
+            f'version_{run_no}',
+            'checkpoints')
+        checkpoints = os.listdir(checkpoints_folder)
+        checkpoint_name = next(x for x in checkpoints
+                               if f'epoch={epoch}' in x)
+        return os.path.join(checkpoints_folder, checkpoint_name)
 
     def df_metrics(self) -> pd.DataFrame:
         if os.path.exists(self.metrics_path):
