@@ -36,8 +36,6 @@ class ExperimentResults:
             f'version_{run_no}',
             'checkpoints')
         checkpoints = os.listdir(checkpoints_folder)
-        print(epoch)
-        print(checkpoints)
         checkpoint_name = next(x for x in checkpoints
                                if f'epoch={epoch}' in x)
         return os.path.join(checkpoints_folder, checkpoint_name)
