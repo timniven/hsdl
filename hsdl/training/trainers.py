@@ -27,7 +27,7 @@ class HsdlTrainer(Trainer):
             self.callbacks.append(early_stopping)
 
         self.my_checkpoint_callback = ModelCheckpoint(
-            monitor=config.training.checkpoint_monitor,
+            monitor='val_metric',  # whatever is chosen, always goes in here
             save_top_k=2,
             mode=config.training.checkpoint_mode)
         self.callbacks.append(self.my_checkpoint_callback)

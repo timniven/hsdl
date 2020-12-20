@@ -9,7 +9,7 @@ from tests import logreg
 class TestLoss(unittest.TestCase):
 
     def test_cumulative_loss(self):
-        loss_fn = lambda x, y: (x == y).sum()
+        loss_fn = lambda x, y: (x == y).mean()
         metric = Loss(loss_fn)
 
         # batch 1: loss = 0.75
