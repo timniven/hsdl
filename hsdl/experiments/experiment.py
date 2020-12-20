@@ -34,6 +34,7 @@ class Experiment:
             os.mkdir(config.results_dir)
 
     def best_module(self, subset: str = 'test', run_no: Optional[int] = None):
+        # get best run_no
         if not run_no:
             df_metrics = self.results.df_metrics()
             metric_name = self.config.metric.name
@@ -46,7 +47,7 @@ class Experiment:
             best_run_no = run_no
 
         df_run = self.results.df_run(best_run_no)
-        best_run_metric = df_run.val_loss.min()
+        best_run_metric = df_run.val_metric.min()
         best_epoch = df_run[df_run.val_metric == best_run_metric].iloc[0].epoch
 
         checkpoint_path = self.results.checkpoint_path(best_run_no, best_epoch)
