@@ -48,7 +48,8 @@ class Experiment:
 
         df_run = self.results.df_run(best_run_no)
         best_run_metric = df_run.val_metric.min()
-        best_epoch = df_run[df_run.val_metric == best_run_metric].iloc[0].epoch
+        best_epoch = int(
+            df_run[df_run.val_metric == best_run_metric].iloc[0].epoch)
 
         checkpoint_path = self.results.checkpoint_path(best_run_no, best_epoch)
         module = self.module_constructor.load_from_checkpoint(
