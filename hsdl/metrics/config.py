@@ -29,8 +29,9 @@ class MaxFBeta(MetricConfig):
 
 class Loss(MetricConfig):
 
-    def __init__(self, criterion: str):
+    def __init__(self, loss_fn: str = 'loss', criterion: str = 'min'):
         super().__init__(
             name='loss',
             criterion=criterion)
+        self.loss_fn = loss_fn
 

@@ -20,7 +20,8 @@ def get_lightning_metric(config, module):
             beta=config.metric.beta,
             multilabel=config.metric.multi_label)
     elif config.metric.name == 'loss':
-        return Loss(loss_fn=module.loss)
+        loss_fn = getattr(module, config.metric.loss_fn)
+        return Loss(loss_fn=loss_fn)
     # TODO: handle more metrics
     else:
         raise ValueError(f'Unexpected metric: {config.metric.name}.')
