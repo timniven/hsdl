@@ -1,6 +1,6 @@
 import os
 import shutil
-from typing import Callable, Optional, Tuple
+from typing import Callable, Optional, Tuple, Union
 
 from pytorch_lightning import LightningDataModule, LightningModule, \
     seed_everything, Trainer
@@ -23,7 +23,7 @@ class Experiment:
                  module_constructor: Callable[[Config], LightningModule],
                  data: LightningDataModule,
                  config: Config,
-                 search_space: SearchSpace):
+                 search_space: Union[SearchSpace, None]):
         self.module_constructor = module_constructor
         self.data = data
         self.config = config
