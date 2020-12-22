@@ -6,6 +6,7 @@ from transformers import AutoModel, AutoTokenizer
 
 
 from_transformers = [
+    'bert-base-chinese',
     'roberta-base',
     'distilbert-base-uncased',
     'distilbert-base-multilingual-cased',

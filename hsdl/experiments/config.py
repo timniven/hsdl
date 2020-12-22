@@ -11,9 +11,9 @@ class ExperimentConfig(Config):
                  model: Union[Config, None],
                  metric: Config,
                  training: Config,
-                 annealing: Config,
+                 annealing: Union[Config, None],
                  optimization: Config,
-                 stopping: Config,
+                 stopping: Union[Config, None],
                  results_dir: str,
                  n_runs: int = 20,
                  **kwargs):

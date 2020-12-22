@@ -1,4 +1,4 @@
-from typing import Tuple, Union
+from typing import Optional, Tuple
 
 from pytorch_lightning import LightningModule
 from torch import Tensor
@@ -53,7 +53,10 @@ class BaseModule(LightningModule):
 
     def log_test_step(self,
                       logits: Tensor,
-                      y: Tensor):
+                      y: Tensor,
+                      loss: Optional[Tensor] = None):
+        if loss is not None:
+            self.log('test_loss', loss, on_epoch=True, on_step=False)
         self.test_metric(logits, y)
         self.log('test_metric',
                  self.val_metric.compute(),
