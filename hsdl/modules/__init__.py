@@ -31,7 +31,7 @@ class BaseModule(LightningModule):
 
     def log_training_step(self,
                           logits: Tensor,
-                          y: Union[Tensor, Tuple],
+                          y: Tensor,
                           loss: Tensor):
         self.log('train_loss', loss)
         if self.train_metric:
@@ -43,7 +43,7 @@ class BaseModule(LightningModule):
 
     def log_validation_step(self,
                             logits: Tensor,
-                            y: Union[Tensor, Tuple],
+                            y: Tensor,
                             loss: Tensor):
         self.log('val_loss', loss, on_epoch=True, on_step=False)
         if self.val_metric:
@@ -55,7 +55,7 @@ class BaseModule(LightningModule):
 
     def log_test_step(self,
                       logits: Tensor,
-                      y: Union[Tensor, Tuple]):
+                      y: Tensor):
         if self.test_metric:
             self.test_metric(logits, y)
             self.log('test_metric',
