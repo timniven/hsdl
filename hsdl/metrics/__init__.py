@@ -15,7 +15,7 @@ def get_lightning_metric(config, module):
     if config.metric.name == 'acc':
         return pl_metrics.Accuracy()
     elif config.metric.name == 'fbeta':
-        return pl_metrics.Fbeta(
+        return pl_metrics.FBeta(
             num_classes=config.metric.num_classes,
             beta=config.metric.beta,
             multilabel=config.metric.multi_label)
