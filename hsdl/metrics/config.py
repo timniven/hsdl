@@ -18,10 +18,11 @@ class MaxAccuracy(MetricConfig):
         super().__init__('acc', 'max')
 
 
-class MaxFBeta(MetricConfig):
+class FBeta(MetricConfig):
 
-    def __init__(self, beta: float, num_classes: int, multi_label: bool):
-        super().__init__('fbeta', 'max')
+    def __init__(self, beta: float, num_classes: int, multi_label: bool,
+                 mode: str = 'max'):
+        super().__init__(name='fbeta', criterion=mode)
         self.beta = beta
         self.num_classes = num_classes
         self.multi_label = multi_label
