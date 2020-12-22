@@ -66,20 +66,20 @@ class BaseModule(LightningModule):
     def training_step(self, batch: Tuple, batch_ix: int) -> Tensor:
         x, y = batch
         logits = self.forward(x)
-        loss = self.loss(x, y)
+        loss = self.loss(logits, y)
         self.log_training_step(logits, y, loss)
         return loss
 
     def validation_step(self, batch: Tuple, batch_ix: int) -> Tensor:
         x, y = batch
         logits = self.forward(x)
-        loss = self.loss(x, y)
+        loss = self.loss(logits, y)
         self.log_training_step(logits, y, loss)
         return loss
 
     def test_step(self, batch: Tuple, batch_ix: int) -> Tensor:
         x, y = batch
         logits = self.forward(x)
-        loss = self.loss(x, y)
+        loss = self.loss(logits, y)
         self.log_training_step(logits, y, loss)
         return loss
