@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 
 from pytorch_lightning import LightningModule
 from torch import Tensor
@@ -12,9 +12,14 @@ class BaseModule(LightningModule):
     def __init__(self, config: ExperimentConfig):
         super().__init__()
         self.config = config
-        self.train_metric = metrics.get_lightning_metric(config, self)
-        self.val_metric = metrics.get_lightning_metric(config, self)
-        self.test_metric = metrics.get_lightning_metric(config, self)
+        self.metrics = {
+            'train': metrics.get_lightning_metric(config, self),
+            'val': metrics.get_lightning_metric(config, self),
+            'test': metrics.get_lightning_metric(config, self),
+        }
+        self.train_metric = self.metrics['train']
+        self.val_metric = self.metrics['val']
+        self.test_metric = self.metrics['test']
         # idea is overriding class defines the model in the constructor
 
     def configure_optimizers(self):
@@ -29,57 +34,42 @@ class BaseModule(LightningModule):
         else:
             return optimizer
 
-    def log_training_step(self,
-                          logits: Tensor,
-                          y: Tensor,
-                          loss: Tensor):
-        self.log('train_loss', loss)
-        self.train_metric(logits, y)
-        self.log('train_metric',
-                 self.train_metric.compute(),
-                 on_step=True,
-                 on_epoch=True)
+    def add_metric(self,
+                   logits: Tensor,
+                   y: Union[Tensor, Tuple],
+                   subset: str):
+        self.metrics[subset](logits, y)
 
-    def log_validation_step(self,
-                            logits: Tensor,
-                            y: Tensor,
-                            loss: Tensor):
-        self.log('val_loss', loss, on_epoch=True, on_step=False)
-        self.val_metric(logits, y)
-        self.log('val_metric',
-                 self.val_metric.compute(),
-                 on_epoch=True,
-                 on_step=False)
-
-    def log_test_step(self,
-                      logits: Tensor,
-                      y: Tensor,
-                      loss: Optional[Tensor] = None):
+    def log_step(self,
+                 subset: str,
+                 logits: Tensor,
+                 y: Union[Tensor, Tuple],
+                 loss: Optional[Tensor] = None):
         if loss is not None:
-            self.log('test_loss', loss, on_epoch=True, on_step=False)
-        self.test_metric(logits, y)
-        self.log('test_metric',
-                 self.val_metric.compute(),
-                 on_epoch=True,
-                 on_step=False)
+            self.log(f'{subset}_loss', loss)
+        self.add_metric(logits, y, subset)
+        self.log(f'{subset}_metric',
+                 self.metrics[subset].compute(),
+                 on_step=subset == 'train',
+                 on_epoch=True)
 
     def training_step(self, batch: Tuple, batch_ix: int) -> Tensor:
         x, y = batch
         logits = self.forward(x)
         loss = self.loss(logits, y)
-        self.log_training_step(logits, y, loss)
+        self.log_step('train', logits, y, loss)
         return loss
 
     def validation_step(self, batch: Tuple, batch_ix: int) -> Tensor:
         x, y = batch
         logits = self.forward(x)
         loss = self.loss(logits, y)
-        self.log_training_step(logits, y, loss)
+        self.log_step('val', logits, y, loss)
         return loss
 
     def test_step(self, batch: Tuple, batch_ix: int) -> Tensor:
         x, y = batch
         logits = self.forward(x)
         loss = self.loss(logits, y)
-        self.log_training_step(logits, y, loss)
+        self.log_step('test', logits, y, loss)
         return loss

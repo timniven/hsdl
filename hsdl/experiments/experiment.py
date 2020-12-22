@@ -1,14 +1,15 @@
 import os
 import shutil
-from typing import Callable, Optional, Tuple, Union
+from typing import Callable, List, Optional, Tuple, Union
 
-from pytorch_lightning import LightningDataModule, LightningModule, \
-    seed_everything, Trainer
+from pytorch_lightning import LightningModule, seed_everything, Trainer
 from pytorch_lightning.loggers import TestTubeLogger
 
-from hsdl import metrics, util
+from hsdl import util
+from hsdl.data_modules import HsdlDataModule
 from hsdl.experiments.config import ExperimentConfig as Config
 from hsdl.experiments.results import ExperimentResults
+from hsdl.metrics import best
 from hsdl.parameter_search import ParameterSearch, SearchSpace
 from hsdl.training import get_trainer
 
@@ -21,7 +22,7 @@ class Experiment:
 
     def __init__(self,
                  module_constructor: Callable[[Config], LightningModule],
-                 data: LightningDataModule,
+                 data: HsdlDataModule,
                  config: Config,
                  search_space: Union[SearchSpace, None]):
         self.module_constructor = module_constructor
@@ -40,7 +41,7 @@ class Experiment:
             metric_name = self.config.metric.name
             eval_metrics = df_metrics[df_metrics.subset == subset]
             eval_metrics = eval_metrics[metric_name].values
-            best_metric = metrics.best(eval_metrics, self.config.metric.criterion)
+            best_metric = best(eval_metrics, self.config.metric.criterion)
             best_run_no = df_metrics[
                 df_metrics[metric_name] == best_metric].iloc[0].run_no
         else:
@@ -123,65 +124,35 @@ class Experiment:
             config=config)
         return trainer, module
 
-    def test_all(self, module: LightningModule, run_no: int, seed: int):
+    def test_all(self, module: LightningModule, run_no: int, seed: int) \
+            -> List[float]:
         # NOTE: couldn't get trainer.test to work for me, so doing it manually
-        # TODO: this is not flexible in any way to the specifics of data & model
-        train_metric = self.test_train(module)
-        self.results.report_metric(
-            run_no=run_no, seed=seed, subset='train', metric=train_metric)
+        metrics = []
+        for subset in ['train', 'val', 'test']:
+            metric = self.test('train', module)
+            if metric is not None:
+                self.results.report_metric(
+                    run_no=run_no,
+                    seed=seed,
+                    subset=subset,
+                    metric=metric)
+            metrics.append(metric)
+        return metrics
 
-        val_metric = self.test_val(module)
-        self.results.report_metric(
-            run_no=run_no, seed=seed, subset='val', metric=val_metric)
-
-        if self.data.test_dataloader():
-            test_metric = self.test_test(module)
-            self.results.report_metric(
-                run_no=run_no, seed=seed, subset='test', metric=test_metric)
-        else:
-            test_metric = 0.
-
-        # this return is for testing
-        return train_metric, val_metric, test_metric
-
-    def test_train(self, module: LightningModule) -> float:
-        module.train_metric.reset()
-        tqdm.write('Evaluating on train...')
-        train = self.data.train_dataloader(self.config)
-        with tqdm(total=len(train)) as pbar:
-            for batch in train:
+    def test(self, subset: str, module: LightningModule) -> Union[float, None]:
+        module.metrics[subset].reset()
+        tqdm.write(f'Evaluating on {subset}...')
+        data = self.data[subset](self.config)
+        if data is None:
+            return None
+        with tqdm(total=len(data)) as pbar:
+            for batch in data:
                 x = batch[0]
                 y = batch[1]
                 preds = module(x)
-                module.train_metric(preds, y)
+                module.add_metric(preds, y, subset)
                 pbar.update()
-        return float(module.train_metric.compute().detach().cpu().numpy())
-
-    def test_val(self, module: LightningModule) -> float:
-        module.val_metric.reset()
-        tqdm.write('Evaluating on val...')
-        val = self.data.val_dataloader(self.config)
-        with tqdm(total=len(val)) as pbar:
-            for batch in val:
-                x = batch[0]
-                y = batch[1]
-                preds = module(x)
-                module.val_metric(preds, y)
-                pbar.update()
-        return float(module.val_metric.compute().detach().cpu().numpy())
-
-    def test_test(self, module: LightningModule) -> float:
-        module.test_metric.reset()
-        tqdm.write('Evaluating on test...')
-        test = self.data.test_dataloader(self.config)
-        with tqdm(total=len(test)) as pbar:
-            for batch in test:
-                x = batch[0]
-                y = batch[1]
-                preds = module(x)
-                module.test_metric(preds, y)
-                pbar.update()
-        return float(module.test_metric.compute().detach().cpu().numpy())
+        return float(module.metrics[subset].compute().detach().cpu().numpy())
 
     @staticmethod
     def validate_search_space(config, search_space):
