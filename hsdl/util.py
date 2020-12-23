@@ -112,8 +112,8 @@ def aligned_print(params: Dict, indent: int = 0) -> None:
                    % (prefix, keys[ix], '\t' * num_tabs[ix], values[ix]))
 
 
-def clear_checkpoints(results_dir: str,
-                      experiment_name: str,
+def clear_checkpoints(experiment_name: str,
+                      results_dir: str = 'results',
                       keep_best: bool = True,
                       base_module: Optional[str] = None,
                       keep_runs: Optional[List[int]] = None) -> None:
@@ -141,7 +141,7 @@ def clear_checkpoints(results_dir: str,
             os.remove(path)
 
 
-def clear_results(results_dir: str, experiment_name: str) -> None:
+def clear_results(experiment_name: str, results_dir: str = 'results') -> None:
     folder = os.path.join(results_dir, experiment_name)
     if os.path.exists(folder):
         print(f'Found folder for experiment {experiment_name}, deleting...')
