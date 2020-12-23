@@ -121,7 +121,7 @@ def clear_checkpoints(results_dir: str,
     if not os.path.exists(folder):
         print(f'Could not find folder for {experiment_name} in {results_dir}.')
         return
-    version_numbers = [int(x.split('_')[0]) for x in os.listdir(folder)
+    version_numbers = [int(x.split('_')[1]) for x in os.listdir(folder)
                        if x.startswith('version')]
     if keep_runs is not None:
         version_numbers = [x for x in version_numbers if x not in keep_runs]
