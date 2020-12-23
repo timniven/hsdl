@@ -1,8 +1,11 @@
 """General utilities."""
+import importlib
 import json
 import math
+import os
 import random
-from typing import Dict
+import shutil
+from typing import Dict, List, Optional
 
 import numpy as np
 import torch
@@ -109,6 +112,44 @@ def aligned_print(params: Dict, indent: int = 0) -> None:
                    % (prefix, keys[ix], '\t' * num_tabs[ix], values[ix]))
 
 
+def clear_checkpoints(results_dir: str,
+                      experiment_name: str,
+                      keep_best: bool = True,
+                      base_module: Optional[str] = None,
+                      keep_runs: Optional[List[int]] = None) -> None:
+    folder = os.path.join(results_dir, experiment_name)
+    if not os.path.exists(folder):
+        print(f'Could not find folder for {experiment_name} in {results_dir}.')
+        return
+    version_numbers = [int(x.split('_')[0]) for x in os.listdir(folder)
+                       if x.startswith('version')]
+    if keep_runs is not None:
+        version_numbers = [x for x in version_numbers if x not in keep_runs]
+    if keep_best:
+        if base_module is None:
+            raise ValueError(f'If keeping best, must specify base module.')
+        experiment = load_experiment(experiment_name, base_module)
+        best_run = experiment.best_run
+        # TODO: take best epoch, not whole folder...
+        version_numbers = [x for x in version_numbers if x != best_run]
+    for version_number in version_numbers:
+        ckpt_folder = os.path.join(
+            folder, f'version_{version_number}', 'checkpoints')
+        ckpts = os.listdir(ckpt_folder)
+        for ckpt in ckpts:
+            path = os.path.join(ckpt_folder, ckpt)
+            os.remove(path)
+
+
+def clear_results(results_dir: str, experiment_name: str) -> None:
+    folder = os.path.join(results_dir, experiment_name)
+    if os.path.exists(folder):
+        print(f'Found folder for experiment {experiment_name}, deleting...')
+        shutil.rmtree(folder)
+    else:
+        print(f'Could not find folder for {experiment_name} in {results_dir}.')
+
+
 def entropy(p, axis=0):
     """Calculate information entropy.
 
@@ -134,6 +175,11 @@ def get_pbar_name(pbar) -> str:
 
 def get_tqdm():
     return tqdm
+
+
+def load_experiment(experiment_name: str, base_module: str):
+    return importlib.import_module(
+        f'{base_module}.{experiment_name}').experiment
 
 
 def new_random_seed():

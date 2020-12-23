@@ -34,30 +34,38 @@ class Experiment:
         if not os.path.exists(config.results_dir):
             os.mkdir(config.results_dir)
 
-    def best_module(self, subset: str = 'test', run_no: Optional[int] = None):
-        # get best run_no
-        if not run_no:
-            df_metrics = self.results.df_metrics()
-            metric_name = self.config.metric.name
-            eval_metrics = df_metrics[df_metrics.subset == subset]
-            eval_metrics = eval_metrics[metric_name].values
-            best_metric = best(eval_metrics, self.config.metric.criterion)
-            best_run_no = df_metrics[
-                df_metrics[metric_name] == best_metric].iloc[0].run_no
-        else:
-            best_run_no = run_no
-
-        df_run = self.results.df_run(best_run_no)
+    def best_epoch(self, run_no: int) -> int:
+        df_run = self.results.df_run(run_no)
         best_run_metric = df_run.val_metric.min()
         best_epoch = int(
             df_run[df_run.val_metric == best_run_metric].iloc[0].epoch)
+        return best_epoch
 
-        checkpoint_path = self.results.checkpoint_path(best_run_no, best_epoch)
+    def best_module(self, subset: str = 'test', run_no: Optional[int] = None):
+        # get best run_no
+        if not run_no:
+            best_run = self.best_run(subset)
+        else:
+            best_run = run_no
+
+        best_epoch = self.best_epoch(best_run)
+
+        checkpoint_path = self.results.checkpoint_path(best_run, best_epoch)
         module = self.module_constructor.load_from_checkpoint(
             checkpoint_path=checkpoint_path,
             config=self.config)
 
         return module
+
+    def best_run(self, subset: str = 'test') -> int:
+        df_metrics = self.results.df_metrics()
+        metric_name = self.config.metric.name
+        eval_metrics = df_metrics[df_metrics.subset == subset]
+        eval_metrics = eval_metrics[metric_name].values
+        best_metric = best(eval_metrics, self.config.metric.criterion)
+        best_run_no = df_metrics[
+            df_metrics[metric_name] == best_metric].iloc[0].run_no
+        return best_run_no
 
     def clean_run_folder(self, run_no: int) -> None:
         run_path = self.results.run_path(run_no)
