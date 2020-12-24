@@ -35,4 +35,3 @@ class Loss(MetricConfig):
             name='loss',
             criterion=criterion)
         self.loss_fn = loss_fn
-

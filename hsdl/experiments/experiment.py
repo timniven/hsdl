@@ -159,6 +159,10 @@ class Experiment:
                 y = batch[1]
                 preds = module(x)
                 module.add_metric(preds, y, subset)
+                print(x)
+                print(y)
+                print(module.metrics[subset].state_dict())
+                raise Exception
                 pbar.update()
         return float(module.metrics[subset].compute().detach().cpu().numpy())
 
