@@ -2,6 +2,7 @@ import os
 import shutil
 from typing import Callable, List, Optional, Tuple, Union
 
+import numpy as np
 from pytorch_lightning import LightningModule, seed_everything, Trainer
 from pytorch_lightning.loggers import TestTubeLogger
 
@@ -9,7 +10,6 @@ from hsdl import util
 from hsdl.data_modules import HsdlDataModule
 from hsdl.experiments.config import ExperimentConfig as Config
 from hsdl.experiments.results import ExperimentResults
-from hsdl.metrics import best
 from hsdl.parameter_search import ParameterSearch, SearchSpace
 from hsdl.training import get_trainer
 
@@ -57,12 +57,16 @@ class Experiment:
 
         return module
 
+    def best_metric(self, eval_metrics):
+        fn = np.max if self.config.metric.criterion == 'max' else np.min
+        return fn(eval_metrics)
+
     def best_run(self, subset: str = 'test') -> int:
         df_metrics = self.results.df_metrics()
         metric_name = self.config.metric.name
         eval_metrics = df_metrics[df_metrics.subset == subset]
         eval_metrics = eval_metrics[metric_name].values
-        best_metric = best(eval_metrics, self.config.metric.criterion)
+        best_metric = self.best_metric(eval_metrics)
         best_run_no = df_metrics[
             df_metrics[metric_name] == best_metric].iloc[0].run_no
         return best_run_no

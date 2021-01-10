@@ -6,7 +6,7 @@ import numpy as np
 import torch
 from torch import Tensor
 
-from .config import MetricConfig
+from .config import *
 
 
 def get_lightning_metric(config, module):
