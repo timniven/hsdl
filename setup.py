@@ -7,7 +7,7 @@ with open('requirements.txt') as f:
 
 setuptools.setup(
     name='hsdl',
-    version='2020.12.22',
+    version='2021.01.10',
     author='timniven',
     author_email='tim.niven.public@gmail.com',
     description='Deep learning tools.',
