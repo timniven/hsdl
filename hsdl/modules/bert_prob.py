@@ -20,6 +20,8 @@ def prob(sent: str, model: PreTrainedModel, tokenizer: PreTrainedTokenizer) \
     log_probs = []
 
     # skip the first ([CLS]) and last ([SEP])
+    # TODO: batching would be superior
+    # https://github.com/jhlau/acceptability-prediction-in-context/blob/master/code/compute_model_score.py#L66
     for ix in range(1, input_ixs.shape[1] - 1):
         input_ixs[0, ix] = tokenizer.mask_token_id
         with torch.no_grad():

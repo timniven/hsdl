@@ -1,9 +1,7 @@
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 
-from hsdl.experiments.config import ExperimentConfig
 
-
-def get(config: ExperimentConfig):
+def get(config):  # config: ExperimentConfig
     if not config.stopping.strategy:
         raise ValueError('No stopping configured.')
     elif config.stopping.strategy == 'no_val_improvement':
