@@ -4,7 +4,6 @@ from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
 from pytorch_lightning.loggers import LightningLoggerBase
 
 from hsdl import stopping, util
-from hsdl.experiments.config import ExperimentConfig
 
 
 tqdm = util.get_tqdm()
@@ -12,7 +11,8 @@ tqdm = util.get_tqdm()
 
 class HsdlTrainer(Trainer):
 
-    def __init__(self, config: ExperimentConfig, logger: LightningLoggerBase):
+    # config: ExperimentConfig
+    def __init__(self, config, logger: LightningLoggerBase):
         super().__init__(
             deterministic=True,
             logger=logger,
