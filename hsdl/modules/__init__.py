@@ -4,7 +4,7 @@ from pytorch_lightning import LightningModule
 from torch import Tensor
 
 from hsdl import annealing, metrics, optimization
-from hsdl.config import ExperimentConfig
+from hsdl.experiments import ExperimentConfig
 
 
 class BaseModule(LightningModule):
