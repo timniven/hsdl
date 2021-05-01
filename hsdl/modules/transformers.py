@@ -17,11 +17,11 @@ class Transformer(BaseModule):
         self.classify = nn.Linear(768, config.model.num_classes)
 
     def add_metric(self,
-                   logits: Tensor,
+                   y_hat: Tensor,
                    y: Union[Tensor, Tuple],
                    subset: str):
         y, _ = y
-        return self.metrics[subset](logits, y)
+        return self.metrics[subset](y_hat, y)
 
     def forward(self, x: Tensor) -> Tensor:
         h = self.transformer(x).last_hidden_state.sum(axis=1)

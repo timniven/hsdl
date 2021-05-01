@@ -1,3 +1,5 @@
+from typing import Optional
+
 from hsdl.config.base import Config
 
 
@@ -45,3 +47,20 @@ class AdamWConfig(OptimizationConfig):
         self.beta2 = beta2
         self.eps = eps
         self.correct_bias = correct_bias
+
+
+class SgdConfig(OptimizationConfig):
+
+    def __init__(self,
+                 lr: float,
+                 weight_decay: Optional[float] = 0.,
+                 momentum: Optional[float] = 0.,
+                 damping: Optional[float] = 0.,
+                 nesterov: Optional[bool] = False):
+        super().__init__(
+            name='sgd',
+            lr=lr,
+            weight_decay=weight_decay)
+        self.momentum = momentum
+        self.damping = damping
+        self.nesterov = nesterov

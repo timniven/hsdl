@@ -138,6 +138,6 @@ search_space = SearchSpace([
 ])
 experiment = Experiment(
     module_constructor=LogisticRegression,
-    data=IrisData(),
+    data_module=IrisData(),
     config=config,
     search_space=search_space)

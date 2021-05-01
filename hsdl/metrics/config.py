@@ -18,6 +18,13 @@ class MaxAccuracy(MetricConfig):
         super().__init__('acc', 'max')
 
 
+class MeanAverageError(MetricConfig):
+
+    def __init__(self, criterion: str = 'min'):
+        assert criterion in ['max', 'min']
+        super().__init__('mae', criterion)
+
+
 class FBeta(MetricConfig):
 
     def __init__(self, beta: float, num_classes: int, multi_label: bool,

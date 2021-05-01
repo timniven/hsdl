@@ -35,19 +35,19 @@ class BaseModule(LightningModule):
             return optimizer
 
     def add_metric(self,
-                   logits: Tensor,
+                   y_hat: Tensor,
                    y: Union[Tensor, Tuple],
                    subset: str):
-        self.metrics[subset](logits, y)
+        self.metrics[subset](y_hat, y)
 
     def log_step(self,
                  subset: str,
-                 logits: Tensor,
+                 y_hat: Tensor,
                  y: Union[Tensor, Tuple],
                  loss: Optional[Tensor] = None):
         if loss is not None:
             self.log(f'{subset}_loss', loss)
-        self.add_metric(logits, y, subset)
+        self.add_metric(y_hat, y, subset)
         self.log(f'{subset}_metric',
                  self.metrics[subset].compute(),
                  on_step=subset == 'train',
@@ -55,21 +55,21 @@ class BaseModule(LightningModule):
 
     def training_step(self, batch: Tuple, batch_ix: int) -> Tensor:
         x, y = batch
-        logits = self.forward(x)
-        loss = self.loss(logits, y)
-        self.log_step('train', logits, y, loss)
+        y_hat = self.forward(x)
+        loss = self.loss(y_hat, y)
+        self.log_step('train', y_hat, y, loss)
         return loss
 
     def validation_step(self, batch: Tuple, batch_ix: int) -> Tensor:
         x, y = batch
-        logits = self.forward(x)
-        loss = self.loss(logits, y)
-        self.log_step('val', logits, y, loss)
+        y_hat = self.forward(x)
+        loss = self.loss(y_hat, y)
+        self.log_step('val', y_hat, y, loss)
         return loss
 
     def test_step(self, batch: Tuple, batch_ix: int) -> Tensor:
         x, y = batch
-        logits = self.forward(x)
-        loss = self.loss(logits, y)
-        self.log_step('test', logits, y, loss)
+        y_hat = self.forward(x)
+        loss = self.loss(y_hat, y)
+        self.log_step('test', y_hat, y, loss)
         return loss

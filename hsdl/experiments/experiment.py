@@ -22,11 +22,11 @@ class Experiment:
 
     def __init__(self,
                  module_constructor: Callable[[Config], LightningModule],
-                 data: HsdlDataModule,
+                 data_module: HsdlDataModule,
                  config: Config,
-                 search_space: Union[SearchSpace, None]):
+                 search_space: Optional[SearchSpace] = None):
         self.module_constructor = module_constructor
-        self.data = data
+        self.data = data_module
         self.config = config
         self.validate_search_space(config, search_space)
         self.search_space = search_space

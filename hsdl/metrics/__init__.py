@@ -22,6 +22,8 @@ def get_lightning_metric(config, module):
     elif config.metric.name == 'loss':
         loss_fn = getattr(module, config.metric.loss_fn)
         return Loss(loss_fn=loss_fn)
+    elif config.metric.name == 'mae':
+        return pl_metrics.MeanAbsoluteError()
     # TODO: handle more metrics
     else:
         raise ValueError(f'Unexpected metric: {config.metric.name}.')

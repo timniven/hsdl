@@ -12,5 +12,12 @@ def get(config, optimizer: Optimizer, verbose: bool = True):
             factor=config.annealing.factor,
             patience=config.annealing.patience,
             verbose=verbose)
+    elif config.annealing.schedule == 'step':
+        return lr_scheduler.StepLR(
+            optimizer=optimizer,
+            step_size=config.annealing['step_size'],
+            gamma=config.annealing['gamma'],
+            last_epoch=config.annealing['last_epoch'],
+            verbose=config.annealing['verbose'])
     else:
         raise ValueError(f'Unexpected lr_schedule: {config.annealing.schedule}')

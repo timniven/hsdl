@@ -1,3 +1,5 @@
+from typing import Optional
+
 from hsdl.config.base import Config
 
 
@@ -6,20 +8,20 @@ class AnnealingConfig(Config):
     def __init__(self,
                  schedule: str,
                  epoch: bool,
-                 iter: bool,
-                 monitor: str,
-                 mode: str):
+                 step: bool,
+                 monitor: Optional[str] = None,
+                 mode: Optional[str] = None):
         """Create a new AnnealingConfig.
 
         Args:
           schedule: String, defines the schedule.
           epoch: Bool, whether to execute each epoch.
-          iter: Bool, whether to execute each iteration.
+          step: Bool, whether to execute each step.
         """
         super().__init__()
         self.schedule = schedule
         self.epoch = epoch
-        self.iter = iter
+        self.iter = step
         self.monitor = monitor
         self.mode = mode
 
@@ -27,14 +29,31 @@ class AnnealingConfig(Config):
 class NoAnnealingConfig(AnnealingConfig):
 
     def __init__(self):
-        super().__init__(
-            schedule='none', epoch=False, iter=False, monitor=None, mode=None)
+        super().__init__(schedule='none', epoch=False, step=False)
 
 
 class ReduceLROnPlateauConfig(AnnealingConfig):
 
     def __init__(self, factor: float, patience: int, monitor: str, mode: str):
-        super().__init__(schedule='plateau', epoch=True, iter=False,
-                         monitor=monitor, mode=mode)
+        super().__init__(
+            schedule='plateau',
+            epoch=True,
+            step=False,
+            monitor=monitor,
+            mode=mode)
         self.factor = factor
         self.patience = patience
+
+
+class StepLrConfig(AnnealingConfig):
+
+    def __init__(self,
+                 step_size: int,
+                 gamma: float,
+                 last_epoch: int,
+                 verbose: bool):
+        super().__init__(schedule='step', epoch=False, step=True)
+        self.step_size = step_size
+        self.gamma = gamma
+        self.last_epoch = last_epoch
+        self.verbose = verbose
