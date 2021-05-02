@@ -29,7 +29,7 @@ class BaseModule(LightningModule):
             return {
                 'optimizer': optimizer,
                 'lr_scheduler': annealer,
-                'monitor': self.config.annealing.monitor,
+                'monitor': self.config.annealing['monitor'],
             }
         else:
             return optimizer

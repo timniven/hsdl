@@ -3,7 +3,7 @@ from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 
 def get(config):  # config: ExperimentConfig
     if not config.stopping.strategy:
-        raise ValueError('No stopping configured.')
+        return None
     elif config.stopping.strategy == 'no_val_improvement':
         return EarlyStopping(
             monitor=config.stopping.monitor,

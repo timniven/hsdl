@@ -1,9 +1,10 @@
+from typing import Iterable
+
 from torch import optim
 import transformers
-from typing import List
 
 
-def get(config, model_parameters: List):
+def get(config, model_parameters: Iterable):
     if config.optimization.name == 'adam':
         return optim.Adam(
             params=model_parameters,

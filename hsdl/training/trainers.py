@@ -16,10 +16,10 @@ class HsdlTrainer(Trainer):
         super().__init__(
             deterministic=True,
             logger=logger,
-            max_epochs=config.training.max_epochs,
-            min_epochs=config.training.min_epochs,
-            gpus=config.training.n_gpus,
-            gradient_clip_val=config.training.gradient_clip_val)
+            max_epochs=config.training['max_epochs'],
+            min_epochs=config.training['min_epochs'],
+            gpus=config.training['n_gpus'],
+            gradient_clip_val=config.training['gradient_clip_val'])
         self.config = config
 
         if config.stopping:
@@ -29,12 +29,13 @@ class HsdlTrainer(Trainer):
         self.my_checkpoint_callback = ModelCheckpoint(
             monitor='val_metric',  # whatever is chosen, always goes in here
             save_top_k=2,
-            mode=config.training.checkpoint_mode)
+            mode=config.training['checkpoint_mode'])
         self.callbacks.append(self.my_checkpoint_callback)
 
         if config.training.gradient_accumulation_steps:
             scheduler = GradientAccumulationScheduler(
-                scheduling={config.training.gradient_accumulation_start:
-                                config.training.gradient_accumulation_steps}
+                scheduling={
+                    config.training['gradient_accumulation_start']:
+                        config.training['gradient_accumulation_steps']}
             )
             self.callbacks.append(scheduler)

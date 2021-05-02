@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Callable, Optional
 
 from hsdl.config.base import Config
 
@@ -50,10 +50,18 @@ class StepLrConfig(AnnealingConfig):
     def __init__(self,
                  step_size: int,
                  gamma: float,
-                 last_epoch: int,
-                 verbose: bool):
+                 last_epoch: int = -1,
+                 verbose: bool = False):
         super().__init__(schedule='step', epoch=False, step=True)
         self.step_size = step_size
         self.gamma = gamma
         self.last_epoch = last_epoch
         self.verbose = verbose
+
+
+class LambdaStep(AnnealingConfig):
+
+    def __init__(self,
+                 func: Callable[[float, int], float]):
+        super().__init__(schedule='lambda_step', epoch=False, step=True)
+        self.func = func
