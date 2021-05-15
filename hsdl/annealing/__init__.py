@@ -3,7 +3,9 @@ from torch.optim import Optimizer, lr_scheduler
 
 def get(config, optimizer: Optimizer, verbose: bool = True):
     """Get annealing algorithm from annealing config."""
-    if config.annealing is None or config.annealing['schedule'] == 'none':
+    if config.annealing is None \
+            or config.annealing['schedule'] == 'none'\
+            or config.annealing['schedule'] == 'model_defined':
         return None
     elif config.annealing['schedule'] == 'plateau':
         return lr_scheduler.ReduceLROnPlateau(

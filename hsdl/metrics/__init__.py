@@ -3,6 +3,7 @@ from typing import Any, Optional
 from pytorch_lightning import metrics as pl_metrics
 from pytorch_lightning.metrics.metric import Metric
 import numpy as np
+from scipy import stats
 import torch
 from torch import Tensor
 
@@ -24,6 +25,8 @@ def get_lightning_metric(config, module):
         return Loss(loss_fn=loss_fn)
     elif config.metric.name == 'mae':
         return pl_metrics.MeanAbsoluteError()
+    elif config.metric['name'] == 'normaltest':
+        return NormalTest()
     # TODO: handle more metrics
     else:
         raise ValueError(f'Unexpected metric: {config.metric.name}.')
@@ -74,3 +77,26 @@ class Loss(Metric):
         loss = self.loss_fn(logits, y)
         self.cum_loss += loss
         self.total += 1  # assume loss is already meaned
+
+
+class NormalTest(Metric):
+    # TODO: this is as slow as shit
+    # TODO: does this even make sense?
+    # TODO: this isn't tested
+
+    def __init__(self):
+        super().__init__(
+            compute_on_step=False,
+            dist_sync_on_step=False,
+            process_group=None)
+        self.dist = []
+
+    def compute(self):
+        _, p = stats.normaltest(self.dist)
+        return Tensor([p])
+
+    def reset(self):
+        self.dist = []
+
+    def update(self, h_hat, h):
+        self.dist += list(h_hat.detach().cpu().numpy())

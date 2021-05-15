@@ -7,19 +7,19 @@ from hsdl import annealing, metrics, optimization
 from hsdl.experiments import ExperimentConfig
 
 
-class BaseModule(LightningModule):
+class HsdlModule(LightningModule):
 
     def __init__(self, config: ExperimentConfig):
         super().__init__()
         self.config = config
+        self.train_metric = metrics.get_lightning_metric(config, self)
+        self.val_metric = metrics.get_lightning_metric(config, self)
+        self.test_metric = metrics.get_lightning_metric(config, self)
         self.metrics = {
-            'train': metrics.get_lightning_metric(config, self),
-            'val': metrics.get_lightning_metric(config, self),
-            'test': metrics.get_lightning_metric(config, self),
+            'train': self.train_metric,
+            'val': self.val_metric,
+            'test': self.test_metric,
         }
-        self.train_metric = self.metrics['train']
-        self.val_metric = self.metrics['val']
-        self.test_metric = self.metrics['test']
         # idea is overriding class defines the model in the constructor
 
     def configure_optimizers(self):
@@ -34,10 +34,10 @@ class BaseModule(LightningModule):
         else:
             return optimizer
 
-    def add_metric(self,
-                   y_hat: Tensor,
-                   y: Union[Tensor, Tuple],
-                   subset: str):
+    def report_metric(self,
+                      y_hat: Tensor,
+                      y: Union[Tensor, Tuple],
+                      subset: str):
         self.metrics[subset](y_hat, y)
 
     def log_step(self,
@@ -47,7 +47,7 @@ class BaseModule(LightningModule):
                  loss: Optional[Tensor] = None):
         if loss is not None:
             self.log(f'{subset}_loss', loss)
-        self.add_metric(y_hat, y, subset)
+        self.report_metric(y_hat, y, subset)
         self.log(f'{subset}_metric',
                  self.metrics[subset].compute(),
                  on_step=subset == 'train',

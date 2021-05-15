@@ -24,12 +24,14 @@ class Experiment:
                  module_constructor: Callable[[Config], LightningModule],
                  data_module: HsdlDataModule,
                  config: Config,
-                 search_space: Optional[SearchSpace] = None):
+                 search_space: Optional[SearchSpace] = None,
+                 grid_data_module: Optional[HsdlDataModule] = None):
         self.module_constructor = module_constructor
         self.data = data_module
         self.config = config
         self.validate_search_space(config, search_space)
         self.search_space = search_space
+        self.grid_data = grid_data_module
         self.results = ExperimentResults(config)
         if not os.path.exists(config.results_dir):
             os.mkdir(config.results_dir)
@@ -93,16 +95,16 @@ class Experiment:
             for run_no in remaining_runs:
                 pbar.set_description(f'Run # {run_no} of {self.config.n_runs}')
 
-                self.clean_run_folder(run_no)
-
                 seed = util.new_random_seed()
 
                 trainer, module = self.train(self.config, seed, run_no)
 
+                # TODO: what's with the second condition?
                 if self.config.metric is not None \
-                        and self.config.metric.name is not None:
+                        and self.config.metric['name'] is not None:
                     self.test_all(module, run_no, seed)
 
+                # TODO: really need this?
                 # try and prevent memory leak
                 del module
                 del trainer
@@ -115,8 +117,10 @@ class Experiment:
     def train(self,
               config,
               seed: int,
+              is_grid_search: bool = False,
               run_no: Optional[int] = None,
               debug: bool = False) -> Tuple[Trainer, LightningModule]:
+        self.clean_run_folder(run_no)
         seed_everything(seed)
         tqdm.write('Running experiment with config:')
         config.print()
@@ -128,12 +132,23 @@ class Experiment:
         trainer = get_trainer(config=config,
                               logger=logger,
                               debug=debug)
-        train_dataloader = self.data.train_dataloader(config=config)
-        val_dataloader = self.data.val_dataloader(config=config)
-        trainer.fit(module, train_dataloader, val_dataloader)
-        module = self.module_constructor.load_from_checkpoint(
-            checkpoint_path=trainer.my_checkpoint_callback.best_model_path,
-            config=config)
+        if is_grid_search and self.grid_data is not None:
+            train_dataloader = self.grid_data.train_dataloader(config=config)
+            val_dataloader = self.grid_data.val_dataloader(config=config)
+        else:
+            train_dataloader = self.data.train_dataloader(config=config)
+            val_dataloader = self.data.val_dataloader(config=config)
+        trainer.fit(
+            model=module,
+            train_dataloader=train_dataloader,
+            val_dataloaders=[val_dataloader])
+        if config.training['max_epochs'] > 1:
+            ckpt_path = trainer.my_checkpoint_callback.best_model_path
+            if ckpt_path is None:
+                ckpt_path = trainer.my_checkpoint_callback.latest_model_path
+            module = self.module_constructor.load_from_checkpoint(
+                checkpoint_path=ckpt_path,
+                config=config)
         return trainer, module
 
     def test_all(self, module: LightningModule, run_no: int, seed: int) \
@@ -141,7 +156,7 @@ class Experiment:
         # NOTE: couldn't get trainer.test to work for me, so doing it manually
         metrics = []
         for subset in ['train', 'val', 'test']:
-            metric = self.test('train', module)
+            metric = self.test(subset, module)
             if metric is not None:
                 self.results.report_metric(
                     run_no=run_no,
@@ -153,18 +168,17 @@ class Experiment:
 
     def test(self, subset: str, module: LightningModule) -> Union[float, None]:
         module.metrics[subset].reset()
-        tqdm.write(f'Evaluating on {subset}...')
         data = self.data[subset](self.config)
         if data is None:
             return None
+        tqdm.write(f'Evaluating on {subset}...')
         with tqdm(total=len(data)) as pbar:
-            for batch in data:
-                x = batch[0]
-                y = batch[1]
-                preds = module(x)
-                module.add_metric(preds, y, subset)
+            for batch_ix, batch in enumerate(data):
+                module.test_step(batch, batch_ix, subset)
                 pbar.update()
-        return float(module.metrics[subset].compute().detach().cpu().numpy())
+        result = float(module.metrics[subset].compute().detach().cpu().numpy())
+        tqdm.write(f'Result: {result}')
+        return result
 
     @staticmethod
     def validate_search_space(config, search_space):

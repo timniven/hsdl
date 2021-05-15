@@ -1,14 +1,14 @@
 from typing import Dict, Tuple, Union
 
 from hsdl.experiments.config import ExperimentConfig
-from hsdl.modules import BaseModule
+from hsdl.modules import HsdlModule
 import torch
 from torch import nn, Tensor
 from torch.nn import functional as F
 from transformers import AutoModel
 
 
-class Transformer(BaseModule):
+class Transformer(HsdlModule):
 
     def __init__(self, config: ExperimentConfig):
         super().__init__(config)
@@ -16,10 +16,10 @@ class Transformer(BaseModule):
         self.dropout = nn.Dropout(p=config.training.dropout)
         self.classify = nn.Linear(768, config.model.num_classes)
 
-    def add_metric(self,
-                   y_hat: Tensor,
-                   y: Union[Tensor, Tuple],
-                   subset: str):
+    def report_metric(self,
+                      y_hat: Tensor,
+                      y: Union[Tensor, Tuple],
+                      subset: str):
         y, _ = y
         return self.metrics[subset](y_hat, y)
 

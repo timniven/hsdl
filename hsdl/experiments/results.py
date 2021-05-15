@@ -57,7 +57,14 @@ class ExperimentResults:
         if not os.path.exists(run_folder):
             raise ValueError(f'Missing folder: {run_folder}')
         run_path = os.path.join(run_folder, 'metrics.csv')
-        return pd.read_csv(run_path)
+        try:
+            df = pd.read_csv(run_path)
+        except Exception as e:
+            print('\n' * 3)
+            print(run_path)
+            print('\n' * 3)
+            raise e
+        return df
 
     @property
     def metrics_path(self):
@@ -108,5 +115,6 @@ class ExperimentResults:
             summary += f'\t{subset} {self.config.metric.name}:\n'
             summary += '\t\tMax: %5.4f\n' % m[self.config.metric.name].max()
             summary += '\t\tMean: %5.4f\n' % m[self.config.metric.name].mean()
+            summary += '\t\tMin: %5.4f\n' % m[self.config.metric.name].min()
             summary += '\t\tStd: %5.4f\n' % m[self.config.metric.name].std()
         return summary

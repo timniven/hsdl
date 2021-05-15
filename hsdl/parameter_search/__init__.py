@@ -9,7 +9,7 @@ from typing import Dict, List
 import numpy as np
 import pandas as pd
 
-from hsdl import metrics, util
+from hsdl import util
 
 
 tqdm = util.get_tqdm()
@@ -74,9 +74,14 @@ class SearchSubSpace:
 class SearchSpace:
     """A search space is the union of cross products of 1+ sub spaces."""
 
-    def __init__(self, sub_spaces: List[SearchSubSpace]):
+    # TODO: pass config as defaults, track types in the loop, cast all columns,
+    #  and fill NaN with the defaults - should avoid ints turning into floats.
+    def __init__(self,
+                 sub_spaces: List[SearchSubSpace],
+                 config=None):
         self.space = self.build_space(sub_spaces)
         self.attrs = list(self.space.columns)  # NOTE: ix is index
+        self.config = config
 
     def __len__(self):
         return len(self.space)
@@ -107,6 +112,7 @@ class SearchResults:
 
     def __init__(self, experiment):
         self.experiment = experiment
+        self.config = experiment.config
         self.space = experiment.search_space
         self.results = self.new_or_load_results()
 
@@ -117,10 +123,13 @@ class SearchResults:
         grouping = ['ix']
         grouping += self.space.attrs
         means = self.results.groupby(grouping).mean().reset_index()
-        best_loss = means.val_loss.min()
-        best_params = means[means.val_loss == best_loss]
+        if self.config.metric['criterion'] == 'min':
+            best_metric = means.val_metric.min()
+        else:
+            best_metric = means.val_metric.max()
+        best_params = means[means.val_metric == best_metric]
         best_params = best_params[grouping]
-        return best_loss, best_params.to_dict('records')
+        return best_metric, best_params.to_dict('records')
 
     @property
     def file_path(self):
@@ -140,14 +149,14 @@ class SearchResults:
     def new_results(self):
         columns = ['ix']
         columns += self.space.attrs
-        columns += ['val_loss']
+        columns += ['val_metric']
         return pd.DataFrame(columns=columns, data=[])
 
-    def report(self, ix: int, params: Dict, val_loss: float):
+    def report(self, ix: int, params: Dict, val_metric: float):
         self.results = self.results.append({
                 'ix': ix,
                 **params,
-                'val_loss': val_loss,
+                'val_metric': val_metric,
             },
             ignore_index=True)
         self.save()
@@ -163,6 +172,7 @@ class ParameterSearch:
                  k_tie_break: int = 1,
                  max_tie_breaks: int = 1):
         self.experiment = experiment
+        self.config = experiment.config
         self.search_space = experiment.search_space
         self.results = SearchResults(experiment)
         self.k_tie_break = k_tie_break
@@ -223,11 +233,15 @@ class ParameterSearch:
                    % (ix, len(self.search_space)))
         util.aligned_print(params, indent=1)
 
-        _, __ = self.experiment.train(config, seed)
+        _, __ = self.experiment.train(
+            config, seed, run_no=0, is_grid_search=True)
         df_run = self.experiment.results.df_run(0)  # always zero with deletes
-        best_loss = df_run.val_loss.min()
 
-        self.results.report(ix, params, best_loss)
+        if self.config.metric['criterion'] == 'min':
+            best_metric = df_run.val_metric.min()
+        else:
+            best_metric = df_run.val_metric.max()
+        self.results.report(ix, params, best_metric)
 
         # remove the checkpoints after a grid search
         self.experiment.results.remove_run_checkpoints(

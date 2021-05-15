@@ -22,15 +22,17 @@ class HsdlTrainer(Trainer):
             gradient_clip_val=config.training['gradient_clip_val'])
         self.config = config
 
+        self.my_checkpoint_callback = ModelCheckpoint(
+            monitor='val_metric',  # whatever is chosen, always goes in here
+            save_last=True,
+            save_top_k=1,
+            mode=config.training['checkpoint_mode'],
+            verbose=True)
+        self.callbacks.append(self.my_checkpoint_callback)
+
         if config.stopping:
             early_stopping = stopping.get(config)
             self.callbacks.append(early_stopping)
-
-        self.my_checkpoint_callback = ModelCheckpoint(
-            monitor='val_metric',  # whatever is chosen, always goes in here
-            save_top_k=2,
-            mode=config.training['checkpoint_mode'])
-        self.callbacks.append(self.my_checkpoint_callback)
 
         if config.training.gradient_accumulation_steps:
             scheduler = GradientAccumulationScheduler(

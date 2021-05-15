@@ -42,3 +42,11 @@ class Loss(MetricConfig):
             name='loss',
             criterion=criterion)
         self.loss_fn = loss_fn
+
+
+class NormalTest(MetricConfig):
+
+    def __init__(self, criterion: str = 'min'):
+        super().__init__(
+            name='normaltest',
+            criterion=criterion)
